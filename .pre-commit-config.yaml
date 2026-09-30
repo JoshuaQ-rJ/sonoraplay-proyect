@@ -1,0 +1,16 @@
+# Revisiones que corren solas antes de cada commit.
+# Usamos "uv run python -m" para que funcione con el Control de aplicaciones de Windows
+# y para usar exactamente las versiones de uv.lock.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff (lint)
+        entry: uv run python -m ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: Ruff (formato)
+        entry: uv run python -m ruff format
+        language: system
+        types: [python]

@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# SonoraPlay: datos pesados o con licencia, no se suben
+data/raw/
+data/processed/
