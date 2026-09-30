@@ -1,1 +1,133 @@
-# sonoraplay-proyect
+# SonoraPlay Regalías
+
+Plataforma de datos que decide qué reproducciones de música son válidas y, con ellas, liquida las regalías de los titulares (sellos, distribuidoras y sociedades de gestión) de **SonoraPlay Media**, un servicio de streaming ficticio con 900 mil suscriptores en Latinoamérica.
+
+Proyecto 08 del programa de ingeniería de datos de Riwi. Equipo: Joshua Quintero, María Clara Manjarrés y Andrea Zárate.
+
+> **Estado:** Sprint 1 (descubrimiento y diseño). Hoy el repositorio tiene la estructura base, el CI y la detección de secretos. El seed, las reglas de negocio y los demás componentes se agregan historia por historia.
+
+---
+
+## Requisitos
+
+| Herramienta | Versión | Para qué |
+|---|---|---|
+| [Git](https://git-scm.com/) | 2.40 o superior | Control de versiones |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | 0.8 o superior | Instala Python 3.12 y las dependencias |
+| [Docker Desktop](https://docs.docker.com/desktop/) | Reciente | PostgreSQL local (a partir de la EG-13) |
+
+No hace falta instalar Python a mano: uv descarga la versión fijada en `.python-version`.
+
+## Instalación
+
+```bash
+git clone https://github.com/JoshuaQ-rJ/sonoraplay-proyect.git
+cd sonoraplay-proyect
+git checkout develop
+uv sync
+uv run python -m pre_commit install
+```
+
+- `uv sync` crea el entorno `.venv` e instala exactamente las versiones de `uv.lock`.
+- `pre_commit install` activa las revisiones automáticas (Ruff) antes de cada commit.
+
+Copia las variables de entorno y completa los valores. El archivo `.env` **nunca** se sube al repositorio:
+
+```bash
+cp .env.example .env
+```
+
+> **Windows:** clona el proyecto fuera de OneDrive (por ejemplo, en `C:\dev`). OneDrive bloquea archivos de `.venv` mientras sincroniza y provoca errores de `Acceso denegado`.
+
+## Pruebas y calidad de código
+
+| Qué | Windows | macOS / Linux |
+|---|---|---|
+| Pruebas | `uv run python -m pytest` | `uv run pytest` |
+| Pruebas con cobertura | `uv run python -m pytest --cov=sonoraplay` | `uv run pytest --cov=sonoraplay` |
+| Lint | `uv run python -m ruff check .` | `uv run ruff check .` |
+| Formato (revisar) | `uv run python -m ruff format --check .` | `uv run ruff format --check .` |
+| Formato (corregir) | `uv run python -m ruff format .` | `uv run ruff format .` |
+
+> En Windows se usa `python -m` porque el Control de aplicaciones puede bloquear los ejecutables que uv crea en `.venv\Scripts\`.
+
+## Integración continua
+
+Cada push a `main` o `develop`, y cada Pull Request, ejecuta tres revisiones en GitHub Actions (`.github/workflows/ci.yml`):
+
+| Job | Qué revisa |
+|---|---|
+| `lint` | Estilo y errores comunes con Ruff (PEP 8) |
+| `test` | Pruebas automatizadas con pytest y cobertura |
+| `secretos` | Credenciales expuestas con [Gitleaks](https://github.com/gitleaks/gitleaks) |
+
+`main` y `develop` están protegidas: solo reciben cambios por Pull Request, con **1 aprobación** y los **3 jobs en verde**.
+
+## Flujo de trabajo
+
+### Ramas
+
+| Rama | Uso |
+|---|---|
+| `main` | Lo entregado al final de cada sprint |
+| `develop` | Integración diaria (rama por defecto) |
+| `feature/EG-XX-descripcion-corta` | Una por historia de Jira; sale de `develop` actualizado |
+
+Para empezar una historia:
+
+```bash
+git checkout develop
+git pull
+git checkout -b feature/EG-17-rn01-rn02
+```
+
+### Commits
+
+Formato [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) con la clave de Jira al final:
+
+```text
+feat(reglas): RN-01 validez de 30 segundos [EG-17]
+fix(seed): evita duplicados al reejecutar [EG-13]
+docs(adr): ADR-0003 duplicados de F1 [EG-12]
+```
+
+Tipos: `feat`, `fix`, `test`, `docs`, `chore`, `ci`, `style`, `refactor`.
+
+### Definition of Done
+
+Un ítem se cierra en Jira solo si:
+
+- [ ] El código está en `develop` y lo revisó otra persona del equipo.
+- [ ] Tiene pruebas automatizadas que pasan, incluida la de su RN o CA.
+- [ ] El CI está en verde y no expone secretos.
+- [ ] Si implicó una decisión técnica, su ADR está escrito en la misma historia.
+- [ ] La documentación que toca está actualizada.
+- [ ] La rama, los commits y el PR citan la clave de Jira.
+
+## Secretos
+
+- Las credenciales **nunca** van en el código ni en commits.
+- En local van en `.env` (ignorado por Git); en el repositorio solo existe `.env.example`, con los nombres de las variables.
+- En AWS (desde el Sprint 3) van en SSM Parameter Store.
+- Si Gitleaks detecta un secreto en un PR, el merge queda bloqueado. Una credencial real expuesta se revoca de inmediato, aunque luego se borre del código.
+
+## Estructura del repositorio
+
+```text
+.github/
+  workflows/ci.yml             CI: lint, pruebas y secretos
+  pull_request_template.md     Checklist de la Definition of Done
+src/sonoraplay/                Código del paquete (src layout)
+tests/                         Pruebas con pytest
+.env.example                   Variables de entorno sin valores reales
+.pre-commit-config.yaml        Revisiones antes de cada commit
+pyproject.toml                 Proyecto, dependencias y configuración de Ruff y pytest
+uv.lock                        Versiones exactas de las dependencias
+```
+
+Se irán agregando con sus historias: `docs/` (arquitectura, ADR y modelos de datos), `schemas/`, `db/`, `data/samples/`, `notebooks/`, `docker-compose.yml` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
+
+## Documentación
+
+- Arquitectura y decisiones (ADR): `docs/arquitectura/` y `docs/adr/` (EG-16).
+- Tablero del proyecto: Jira, proyecto **EG**.
