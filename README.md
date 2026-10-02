@@ -14,7 +14,7 @@ Proyecto 08 del programa de ingeniería de datos de Riwi. Equipo: Joshua Quinter
 |---|---|---|
 | [Git](https://git-scm.com/) | 2.40 o superior | Control de versiones |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | 0.8 o superior | Instala Python 3.12 y las dependencias |
-| [Docker Desktop](https://docs.docker.com/desktop/) | Reciente | PostgreSQL local (a partir de la EG-13) |
+| [Docker Desktop](https://docs.docker.com/desktop/) | Reciente | PostgreSQL local (a partir de la EG-13) y Gitleaks en pre-commit |
 
 No hace falta instalar Python a mano: uv descarga la versión fijada en `.python-version`.
 
@@ -29,7 +29,7 @@ uv run python -m pre_commit install
 ```
 
 - `uv sync` crea el entorno `.venv` e instala exactamente las versiones de `uv.lock`.
-- `pre_commit install` activa las revisiones automáticas (Ruff) antes de cada commit.
+- `pre_commit install` activa las revisiones automáticas (Ruff y Gitleaks) antes de cada commit. Gitleaks corre en Docker, así que Docker Desktop debe estar encendido al hacer commit.
 
 Copia las variables de entorno y completa los valores. El archivo `.env` **nunca** se sube al repositorio:
 
@@ -150,7 +150,8 @@ src/sonoraplay/seed/           Generador del seed F3
 tests/                         Pruebas con pytest
 docker-compose.yml             PostgreSQL 16 local
 .env.example                   Variables de entorno sin valores reales
-.pre-commit-config.yaml        Revisiones antes de cada commit
+.pre-commit-config.yaml        Revisiones antes de cada commit (Ruff y Gitleaks)
+LICENSE                        Licencia MIT
 pyproject.toml                 Proyecto, dependencias y configuración de Ruff y pytest
 uv.lock                        Versiones exactas de las dependencias
 ```

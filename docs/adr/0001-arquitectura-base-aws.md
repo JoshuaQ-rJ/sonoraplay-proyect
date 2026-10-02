@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto (se acepta en la review del Sprint 1) |
+| Estado | Aceptado |
 | Fecha | 2026-09-30 |
 | Historia que lo origina | HU 07 · EG-16 |
 | Responsable | Joshua (lidera) · María Clara · Andrea |
-| Revisó | Pendiente |
+| Revisó | Andrea — aprobado el 2026-10-02 |
 | Referencias | E-01 v1, temas 5–10 y 16, RNF-01, RNF-04, CT-02 |
 
 ## 1. Contexto
