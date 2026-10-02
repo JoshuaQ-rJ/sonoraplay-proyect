@@ -77,6 +77,8 @@ Los titulares se reparten con pesos tipo Zipf (1/k): los 10 titulares más grand
 
 - **Positivas:** `track_id` es clave primaria del catálogo y de la futura tabla de pistas; los joins con F2 no multiplican filas; el resultado es idéntico en cada corrida (semilla 42, verificado con `assert_frame_equal`).
 - **Negativas / lo que aceptamos:** el género principal es arbitrario en 15.767 pistas (desempate alfabético). Solo afecta reportes por género, no el dinero. Las 13.054 pistas homónimas quedan como pistas distintas, y en los reportes pueden verse como «la misma canción repetida».
+- **Sesgo de `genero_principal`:** por los 15.767 empates de popularidad, `genero_principal` queda sesgado hacia el orden alfabético (por ejemplo, entre `alt-rock` y `rock` gana siempre `alt-rock`). Por eso **los análisis por género deben usar la tabla puente `track_generos`, no `genero_principal`**: en particular el modelo dimensional (EG-31) y los tableros de Power BI (EG-44). `genero_principal` sirve solo como etiqueta de visualización.
+- **Popularidad:** en las 720 pistas cuya popularidad cambia entre filas, el catálogo conserva la de la fila elegida, que es la máxima. Las popularidades menores se descartan.
 - **Riesgos y mitigación:** si F2 trajera un `track_id` que no está en el catálogo (por ejemplo, el de la fila descartada), la reproducción no tendría titular; la validación de F2 (EG-15) debe marcarla en vez de perderla en silencio. Si el docente responde distinto a Q9, este ADR pasa a *Reemplazado*.
 
 ## 6. Cómo sabremos que funciona
