@@ -40,7 +40,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Assumption:** Yes. The 30 seconds must be continuous. A pause, seek or interruption before reaching the threshold resets the count. A play is valid when one uninterrupted segment is ≥ 30 s (exactly 30 s is valid).
 
-**Impact:** `src/sonoraplay/reglas/validez.py` and CA-01 tests (EG-17, already Done — verify the tests cover "15 s + pause + 20 s = not valid"); Spark Silver layer (EG-35).
+**Impact:** `src/sonoraplay/reglas/validez.py` (created in EG-17) and CA-01 tests (EG-17, To Do — its tests must cover "15 s + pause + 20 s = not valid"); Spark Silver layer (EG-35).
 
 ### Q2 — RN-03: Artist listener threshold
 
@@ -58,7 +58,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Why:** RN-03 says excluded streams "remain under review", which only makes sense if they can be paid later; and paying fraud by mistake is costlier for the labels than a delayed payment to a legitimate user. The false-positive cost is controlled by CA-10 (< 2%).
 
-**Impact:** Exclusion period in `config.py` (EG-18 is Done — check that the value matches this assumption); ADR-0005 (thresholds and period), ADR-0007 (adjustments), fraud report EG-43.
+**Impact:** Exclusion period in `config.py` (EG-18, To Do — set the value to match this assumption when it is implemented); ADR-0005 (thresholds and period), ADR-0007 (adjustments), fraud report EG-43.
 
 ### Q4 — RN-02 / RN-04: Time zone
 
