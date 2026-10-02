@@ -12,6 +12,9 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "faker>=30",
     "jsonschema>=4.23",
+    # Topes: el Control de aplicaciones de Windows bloquea DLL de pandas 3.0.6 y pyarrow 25.0.1
+    "pandas>=2.2,<3",
+    "pyarrow>=17,<25",
 ]
 
 [build-system]
@@ -20,6 +23,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "jupyter>=1.1.1",
     "pre-commit>=4.6.2",
     "pytest>=8",
     "pytest-cov>=7.1.0",
