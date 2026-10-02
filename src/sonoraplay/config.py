@@ -22,3 +22,8 @@ class SeedConfig:
     fecha_referencia: date = date(2026, 9, 30)  # nunca now(): rompe la reproducibilidad
     fecha_inicio_historia: date = date(2024, 1, 1)
     tamano_lote: int = 5_000
+
+
+# Catálogo F1 (EG-12)
+N_TITULARES = 1_500
+SEMILLA_CATALOGO = 42
