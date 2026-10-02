@@ -51,6 +51,32 @@ cp .env.example .env
 
 > En Windows se usa `python -m` porque el Control de aplicaciones puede bloquear los ejecutables que uv crea en `.venv\Scripts\`.
 
+## Seed F3 de suscripciones (EG-13)
+
+Seed reproducible e idempotente de la base F3 de suscripciones (PostgreSQL 16).
+
+```bash
+cp .env.example .env            # y cambia POSTGRES_PASSWORD
+uv sync
+docker compose up -d --wait     # aplica db/ddl/ al crear el volumen
+uv run --env-file .env python -m sonoraplay.seed --modo dev        # 10.000 usuarios
+uv run --env-file .env python -m sonoraplay.seed --modo completo   # 900.000 usuarios
+uv run --env-file .env python -m pytest tests/seed -v
+```
+
+Opciones: `--semilla N` (por defecto `SEED`=42), `--usuarios N`, `--tasa-defectos 0.02`.
+
+Si el puerto 5432 está ocupado, cambia `PG_PORT` y el puerto de las dos URLs en `.env`. Para RDS (Sprint 3, EG-28) solo cambia `DATABASE_URL`.
+
+Comportamientos a conocer:
+
+1. El volumen es un objetivo: la última familia puede sumar hasta 5 usuarios extra; dev es prefijo exacto de completo.
+2. Otra semilla sobre una base cargada agrega un segundo conjunto de datos aparte.
+3. Cambiar la tasa de defectos exige base vacía (`docker compose down -v`): las filas existentes no se actualizan.
+4. Si cambias el DDL, corre `docker compose down -v` (el entrypoint solo aplica scripts con el volumen vacío).
+
+Modelo y decisiones: `docs/datos/modelo-f3.md`.
+
 ## Integración continua
 
 Cada push a `main` o `develop`, y cada Pull Request, ejecuta tres revisiones en GitHub Actions (`.github/workflows/ci.yml`):
@@ -117,15 +143,19 @@ Un ítem se cierra en Jira solo si:
 .github/
   workflows/ci.yml             CI: lint, pruebas y secretos
   pull_request_template.md     Checklist de la Definition of Done
+db/ddl/                        DDL de PostgreSQL (se aplica al crear el volumen)
+docs/datos/                    Modelos de datos y decisiones
 src/sonoraplay/                Código del paquete (src layout)
+src/sonoraplay/seed/           Generador del seed F3
 tests/                         Pruebas con pytest
+docker-compose.yml             PostgreSQL 16 local
 .env.example                   Variables de entorno sin valores reales
 .pre-commit-config.yaml        Revisiones antes de cada commit
 pyproject.toml                 Proyecto, dependencias y configuración de Ruff y pytest
 uv.lock                        Versiones exactas de las dependencias
 ```
 
-Se irán agregando con sus historias: `docs/` (arquitectura, ADR y modelos de datos), `schemas/`, `db/`, `data/samples/`, `notebooks/`, `docker-compose.yml` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
+Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/`, `schemas/`, `data/samples/`, `notebooks/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
 
 ## Documentación
 
