@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from datetime import date
+from typing import Literal
 
 VOLUMENES = {"dev": 10_000, "completo": 900_000}
 
@@ -22,3 +23,24 @@ class SeedConfig:
     fecha_referencia: date = date(2026, 9, 30)  # nunca now(): rompe la reproducibilidad
     fecha_inicio_historia: date = date(2024, 1, 1)
     tamano_lote: int = 5_000
+
+
+# --- Umbrales de reglas de negocio ----------------------------------------------------------
+# Cada bloque cita su regla y el ADR que justifica los valores. Recalibrar aquí, no en el código.
+
+
+@dataclass(frozen=True)
+class ReglasFraudeConfig:
+    """RN-03 · detección de granjas (EG-18). Valores justificados en ADR-0005."""
+
+    # RN-03 señal 1: horas escuchadas en cualquier ventana móvil de 24 h. Se marca si > 20.
+    horas_max_24h: float = 20
+    # RN-03 señal 2: fracción de las reproducciones del mes a un solo artista. Se marca si > 0,70...
+    porcentaje_max_artista: float = 0.70
+    # ...y ese artista tiene < 1.000 oyentes únicos en el mes UTC (EG-11 Q2).
+    oyentes_min_artista: int = 1_000
+    # RN-03 señal 3: cuentas distintas en un mismo dispositivo. Se marca si > 5 (ADR-0005:
+    # protege a las familias de hasta 5 cuentas).
+    cuentas_max_dispositivo: int = 5
+    # EG-11 Q3: se excluye todo el mes de liquidación de la cuenta sospechosa ("en_revision").
+    periodo_exclusion: Literal["mes"] = "mes"
