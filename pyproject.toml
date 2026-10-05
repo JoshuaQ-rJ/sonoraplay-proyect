@@ -3,6 +3,8 @@ name = "sonoraplay"
 version = "0.1.0"
 description = "SonoraPlay Regalías — plataforma de datos (Proyecto 08)"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Joshua", email = "joshua.quintero@outlook.com" }
 ]
