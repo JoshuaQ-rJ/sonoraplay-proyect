@@ -14,3 +14,12 @@ repos:
         entry: uv run python -m ruff format
         language: system
         types: [python]
+
+  # Misma herramienta que el job "secretos" del CI, pero antes de que el secreto
+  # llegue a un commit. Usamos la imagen Docker porque el Control de aplicaciones
+  # de Windows bloquea el Go que descarga el hook "gitleaks" normal.
+  # Requiere Docker Desktop encendido al hacer commit.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks-docker

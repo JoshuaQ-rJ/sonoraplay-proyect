@@ -14,7 +14,7 @@ Proyecto 08 del programa de ingeniería de datos de Riwi. Equipo: Joshua Quinter
 |---|---|---|
 | [Git](https://git-scm.com/) | 2.40 o superior | Control de versiones |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | 0.8 o superior | Instala Python 3.12 y las dependencias |
-| [Docker Desktop](https://docs.docker.com/desktop/) | Reciente | PostgreSQL local (a partir de la EG-13) |
+| [Docker Desktop](https://docs.docker.com/desktop/) | Reciente | PostgreSQL local (a partir de la EG-13) y Gitleaks en pre-commit |
 
 No hace falta instalar Python a mano: uv descarga la versión fijada en `.python-version`.
 
@@ -29,7 +29,7 @@ uv run python -m pre_commit install
 ```
 
 - `uv sync` crea el entorno `.venv` e instala exactamente las versiones de `uv.lock`.
-- `pre_commit install` activa las revisiones automáticas (Ruff) antes de cada commit.
+- `pre_commit install` activa las revisiones automáticas (Ruff y Gitleaks) antes de cada commit. Gitleaks corre en Docker, así que Docker Desktop debe estar encendido al hacer commit.
 
 Copia las variables de entorno y completa los valores. El archivo `.env` **nunca** se sube al repositorio:
 
@@ -76,6 +76,29 @@ Comportamientos a conocer:
 4. Si cambias el DDL, corre `docker compose down -v` (el entrypoint solo aplica scripts con el volumen vacío).
 
 Modelo y decisiones: `docs/datos/modelo-f3.md`.
+
+## Catálogo F1 (EG-12)
+
+Limpia el catálogo de pistas (F1): una fila por `track_id`, género principal, tabla puente de géneros y un titular de derechos por artista. Decisión y cifras en [ADR-0003](docs/adr/0003-duplicados-f1.md); exploración en `notebooks/01_exploracion_f1.ipynb`.
+
+1. Descarga el CSV del [Spotify Tracks Dataset](https://www.kaggle.com/datasets/maharshipandya/-spotify-tracks-dataset) (Kaggle, 114.000 filas) y guárdalo como `data/raw/dataset.csv`. `data/raw/` y `data/processed/` no se suben al repositorio.
+2. Corre el pipeline:
+
+```bash
+uv run python -m sonoraplay.catalogo     # Windows y macOS / Linux
+```
+
+Escribe en `data/processed/`:
+
+| Archivo | Contenido |
+|---|---|
+| `catalogo_f1.parquet` | Una fila por `track_id`, con `genero_principal`, `artista_principal` y `titular_id` |
+| `track_generos.parquet` | Tabla puente (`track_id`, `genero`) con todos los géneros de cada pista |
+| `titulares.parquet` | 1.500 titulares (sello, distribuidora o sociedad de gestión) con UUID determinista |
+
+Opciones: `--entrada`, `--salida`, `--titulares N` (por defecto 1.500) y `--semilla N` (por defecto 42). La misma semilla produce exactamente los mismos archivos.
+
+Las pruebas (`tests/catalogo`) usan solo la muestra versionada `data/samples/f1_muestra.csv` (200 filas con los casos difíciles). Para regenerarla: `uv run python -m sonoraplay.catalogo.muestra`.
 
 ## Integración continua
 
@@ -147,15 +170,19 @@ db/ddl/                        DDL de PostgreSQL (se aplica al crear el volumen)
 docs/datos/                    Modelos de datos y decisiones
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/seed/           Generador del seed F3
+src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
+data/samples/                  Muestras pequeñas versionadas para pruebas
+notebooks/                     Exploración de datos
 tests/                         Pruebas con pytest
 docker-compose.yml             PostgreSQL 16 local
 .env.example                   Variables de entorno sin valores reales
-.pre-commit-config.yaml        Revisiones antes de cada commit
+.pre-commit-config.yaml        Revisiones antes de cada commit (Ruff y Gitleaks)
+LICENSE                        Licencia MIT
 pyproject.toml                 Proyecto, dependencias y configuración de Ruff y pytest
 uv.lock                        Versiones exactas de las dependencias
 ```
 
-Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/`, `schemas/`, `data/samples/`, `notebooks/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
+Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/`, `schemas/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
 
 ## Documentación
 

@@ -25,6 +25,11 @@ class SeedConfig:
     tamano_lote: int = 5_000
 
 
+# Catálogo F1 (EG-12)
+N_TITULARES = 1_500
+SEMILLA_CATALOGO = 42
+
+
 # --- Umbrales de reglas de negocio ----------------------------------------------------------
 # Cada bloque cita su regla y el ADR que justifica los valores. Recalibrar aquí, no en el código.
 
