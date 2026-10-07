@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine import make_url
 
-DDL_F3 = Path(__file__).resolve().parents[1] / "db" / "ddl" / "001_f3_suscripciones.sql"
+DDL_DIR = Path(__file__).resolve().parents[1] / "db" / "ddl"
 
 
 def _recrear_esquema(engine: Engine) -> None:
@@ -14,7 +14,7 @@ def _recrear_esquema(engine: Engine) -> None:
     with engine.begin() as c:
         cur = c.connection.driver_connection.cursor()
         cur.execute("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;")
-        cur.execute(DDL_F3.read_text(encoding="utf-8"))
+        for ddl in sorted(DDL_DIR.glob("*.sql")):\n            cur.execute(ddl.read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="session")
