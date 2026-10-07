@@ -5,17 +5,18 @@ EG-14. Lee los IDs reales producidos por EG-12 para no inventar titulares ni pis
 
 from __future__ import annotations
 
+import argparse
 import random
 import uuid
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import Engine, MetaData, Table, func, select
+from sqlalchemy import Engine, MetaData, Table, create_engine, func, select
 from sqlalchemy.dialects.postgresql import insert
 
-from sonoraplay.config import ContratosConfig
+from sonoraplay.config import ContratosConfig, database_url
 from sonoraplay.seed.f3_suscripciones import NAMESPACE
 
 PAISES = ["CO", "MX", "BR", "AR", "CL", "PE"]
@@ -77,7 +78,7 @@ def generar(fuentes: FuentesF1, cfg: ContratosConfig) -> tuple[list[dict], list[
 
         periodos = [(cfg.fecha_inicio, None, porcentaje)]
         if cambia:
-            corte = cfg.fecha_inicio + timedelta(days=14)  # ejemplo RN-07: cambia el día 15
+            corte = cfg.fecha_inicio + timedelta(days=14)
             nuevo = rng.randint(cfg.porcentaje_min, cfg.porcentaje_max)
             if nuevo == porcentaje:
                 nuevo = cfg.porcentaje_min if porcentaje != cfg.porcentaje_min else cfg.porcentaje_max
@@ -120,6 +121,24 @@ def ejecutar(engine: Engine, directorio_f1: Path, cfg: ContratosConfig) -> dict[
         conn.execute(insert(tablas["titulares_derechos"]).on_conflict_do_nothing(), titulares)
         conn.execute(insert(tablas["contratos"]).on_conflict_do_nothing(), contratos)
         if exclusiones:
-            conn.execute(insert(tablas["exclusiones_territoriales"]).on_conflict_do_nothing(), exclusiones)
+            conn.execute(
+                insert(tablas["exclusiones_territoriales"]).on_conflict_do_nothing(), exclusiones
+            )
     with engine.connect() as conn:
         return {n: conn.scalar(select(func.count()).select_from(t)) for n, t in tablas.items()}
+
+
+def main() -> None:
+    """Ejecuta el seed F4 usando DATABASE_URL, igual que el resto de seeds."""
+    parser = argparse.ArgumentParser(description="Seed F4 de contratos")
+    parser.add_argument("--datos-f1", type=Path, default=Path("data/processed"))
+    parser.add_argument("--semilla", type=int, default=42)
+    args = parser.parse_args()
+    engine = create_engine(database_url())
+    conteos = ejecutar(engine, args.datos_f1, ContratosConfig(semilla=args.semilla))
+    for tabla, total in conteos.items():
+        print(f"{tabla:<28}{total:>10,}")
+
+
+if __name__ == "__main__":
+    main()
