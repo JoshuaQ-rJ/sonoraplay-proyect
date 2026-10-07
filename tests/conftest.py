@@ -14,7 +14,8 @@ def _recrear_esquema(engine: Engine) -> None:
     with engine.begin() as c:
         cur = c.connection.driver_connection.cursor()
         cur.execute("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;")
-        for ddl in sorted(DDL_DIR.glob("*.sql")):\n            cur.execute(ddl.read_text(encoding="utf-8"))
+        for ddl in sorted(DDL_DIR.glob("*.sql")):
+            cur.execute(ddl.read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="session")
