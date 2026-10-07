@@ -11,7 +11,7 @@
 | [0001](0001-arquitectura-base-aws.md) | Arquitectura base en AWS: servicios 24/7 al menor costo justificable | 07 | EG-16 | S1 | Joshua (los tres) | E-01 v1 | 🟢 |
 | [0002](0002-zona-horaria-dia-mes.md) | Zona horaria que define el "día" y el "mes": **UTC** (aceptado 2026-10-02; se revisa si el docente responde distinto) | 02 | EG-11 | S1 | María Clara | RN-02, RN-04 | 🟢 |
 | [0003](0003-duplicados-f1.md) | Pistas duplicadas en F1: una fila por `track_id` con género principal y tabla puente de géneros | 03 | EG-12 | S1 | María Clara | F1, RN-03, Q9 | 🟡 |
-| 0004 | Esquema JSON de eventos F2 y deduplicación por `event_id` | 06 | EG-15 | S1 | Andrea | F2, RNF-04 | ⚪ |
+| [0004](0004-esquema-eventos-f2.md) | Esquema JSON de eventos F2 y deduplicación por `event_id` | 06 | EG-15 | S1 | Andrea | F2, RNF-04 | 🟡 |
 | [0005](0005-umbrales-granjas.md) | Umbrales de las 3 señales de granja y periodo de exclusión | 09 | EG-18 | S1 | María Clara | RN-03, CA-03, CA-10 | 🟡 |
 | 0006 | Autenticación de sellos y aislamiento entre titulares (token firmado, 403) | 12 | EG-21 | S2 | Andrea | RN-11, CA-08, RF-05 | ⚪ |
 | 0007 | Cierre de mes append-only, ajustes y re-liquidación | 14 | EG-23 | S2 | María Clara | RF-09, CA-07, RNF-02 | ⚪ |
