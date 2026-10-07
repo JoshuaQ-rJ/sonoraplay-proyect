@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoshuaQ-rJ/sonoraplay-proyect/schemas/f2_evento.schema.json",
+  "title": "Evento de reproducción F2",
+  "description": "Un evento de reproducción de SonoraPlay tal como queda en la cola tras la API de ingesta (que añade server_ts). Todos los timestamps en UTC (ADR-0002). Decisiones en ADR-0004; diccionario en docs/datos/eventos-f2.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "user_id",
+    "device_id",
+    "track_id",
+    "session_id",
+    "device_ts",
+    "server_ts",
+    "position_ms",
+    "country_playback",
+    "is_offline"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Versión del esquema. Un cambio incompatible crea una versión nueva (ADR-0004).",
+      "const": "1.0"
+    },
+    "event_id": {
+      "description": "UUID que genera el dispositivo para cada evento. Un reintento reenvía el mismo event_id: es la llave de deduplicación (RNF-04, ADR-0004).",
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "description": "Qué pasó en la reproducción. Con start/pause/resume/skip/end se reconstruyen los tramos continuos (RN-01).",
+      "enum": ["start", "pause", "resume", "skip", "end"]
+    },
+    "user_id": {
+      "description": "Cuenta que escucha: usuario_id de F3 (RN-02, RN-03, RN-10).",
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "description": "Identificador opaco del dispositivo (RN-03 señal 3). No está en F3, por eso no se exige UUID.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "track_id": {
+      "description": "track_id del catálogo F1 (22 caracteres base62, formato Spotify). Que exista en F1 se revisa en calidad de datos, no aquí.",
+      "type": "string",
+      "pattern": "^[0-9A-Za-z]{22}$"
+    },
+    "session_id": {
+      "description": "Una sesión es una reproducción de un track en un dispositivo por una cuenta, desde su start hasta su end o skip.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_ts": {
+      "description": "Momento del evento según el reloj del dispositivo, en UTC con Z. Define el día y el mes real de la reproducción (RN-02, RN-04).",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$"
+    },
+    "server_ts": {
+      "description": "Momento en que la API de ingesta recibió el evento, en UTC con Z. Sirve para el corte offline (RN-04) y para detectar relojes desfasados.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$"
+    },
+    "position_ms": {
+      "description": "Posición dentro del track, en milisegundos, en el momento del evento (RN-01).",
+      "type": "integer",
+      "minimum": 0
+    },
+    "country_playback": {
+      "description": "País donde se reproduce, ISO 3166-1 alfa-2 en mayúsculas (RN-08). No es el país de facturación (F3, RN-10).",
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "is_offline": {
+      "description": "true si se reprodujo sin conexión y se sincronizó después (RN-04).",
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "defecto": "track_desconocido",
+  "descripcion": "El track_id tiene formato válido pero no existe en el catálogo F1: no se puede resolver el artista ni el titular.",
+  "contexto": {
+    "track_id_en_catalogo_f1": false
+  },
+  "eventos": [
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0301-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "start",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "zZ9yY8xX7wW6vV5uU4tT3s",
+      "session_id": "f6a7b8c9-d0e1-4f2a-8b3c-4d5e6f7a8b92",
+      "device_ts": "2026-09-18T09:00:00.000Z",
+      "server_ts": "2026-09-18T09:00:00.160Z",
+      "position_ms": 0,
+      "country_playback": "CO",
+      "is_offline": false
+    },
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0302-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "end",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "zZ9yY8xX7wW6vV5uU4tT3s",
+      "session_id": "f6a7b8c9-d0e1-4f2a-8b3c-4d5e6f7a8b92",
+      "device_ts": "2026-09-18T09:02:45.000Z",
+      "server_ts": "2026-09-18T09:02:45.180Z",
+      "position_ms": 165000,
+      "country_playback": "CO",
+      "is_offline": false
+    }
+  ]
+}

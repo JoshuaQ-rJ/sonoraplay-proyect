@@ -100,6 +100,14 @@ Opciones: `--entrada`, `--salida`, `--titulares N` (por defecto 1.500) y `--semi
 
 Las pruebas (`tests/catalogo`) usan solo la muestra versionada `data/samples/f1_muestra.csv` (200 filas con los casos difíciles). Para regenerarla: `uv run python -m sonoraplay.catalogo.muestra`.
 
+## Eventos F2 (EG-15)
+
+Esquema JSON (draft 2020-12) de los eventos de reproducción: `schemas/f2_evento.schema.json`. Campos, defectos inyectados y cómo se reconstruye una reproducción a partir de los eventos: `docs/datos/eventos-f2.md`. Deduplicación por `event_id`: [ADR-0004](docs/adr/0004-esquema-eventos-f2.md).
+
+```bash
+uv run pytest tests/schemas -v     # ejemplos válidos, inválidos y con defectos
+```
+
 ## Integración continua
 
 Cada push a `main` o `develop`, y cada Pull Request, ejecuta tres revisiones en GitHub Actions (`.github/workflows/ci.yml`):
@@ -168,6 +176,7 @@ Un ítem se cierra en Jira solo si:
   pull_request_template.md     Checklist de la Definition of Done
 db/ddl/                        DDL de PostgreSQL (se aplica al crear el volumen)
 docs/datos/                    Modelos de datos y decisiones
+schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/seed/           Generador del seed F3
 src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
@@ -182,7 +191,7 @@ pyproject.toml                 Proyecto, dependencias y configuración de Ruff y
 uv.lock                        Versiones exactas de las dependencias
 ```
 
-Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/`, `schemas/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
+Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
 
 ## Documentación
 
