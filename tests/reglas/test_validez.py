@@ -5,6 +5,8 @@ import random
 from datetime import UTC, date, datetime, timedelta, timezone
 
 import pytest
+
+from sonoraplay.config import ReglasValidezConfig
 from sonoraplay.reglas.validez import (
     MotivoValidez,
     ReproduccionValidez,
@@ -13,8 +15,6 @@ from sonoraplay.reglas.validez import (
     dia_utc,
     es_valida,
 )
-
-from sonoraplay.config import ReglasValidezConfig
 
 CFG = ReglasValidezConfig()
 BASE = datetime(2026, 9, 10, 12, 0, tzinfo=UTC)

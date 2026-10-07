@@ -49,3 +49,15 @@ class ReglasFraudeConfig:
     cuentas_max_dispositivo: int = 5
     # EG-11 Q3: se excluye todo el mes de liquidación de la cuenta sospechosa ("en_revision").
     periodo_exclusion: Literal["mes"] = "mes"
+
+
+@dataclass(frozen=True)
+class ReglasValidezConfig:
+    """RN-01 y RN-02 · validez y tope diario (EG-17). Supuestos de EG-11 Q1 y Q4, ADR-0002."""
+
+    # RN-01: un tramo continuo de al menos estos segundos hace válida la reproducción (>= 30 s).
+    # EG-11 Q1: la pausa, el seek o la interrupción antes del umbral reinician el conteo.
+    segundos_min_validez: int = 30
+    # RN-02: máximo de reproducciones válidas pagables por track, usuario y día.
+    # EG-11 Q4 / ADR-0002: el "día" es la fecha UTC.
+    max_reproducciones_dia: int = 10
