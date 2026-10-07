@@ -1,0 +1,14 @@
+{
+  "schema_version": "2.0",
+  "event_id": "c7e1d0a4-0001-4f2b-9a6e-5b3c2d1e0f01",
+  "event_type": "start",
+  "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+  "device_id": "android-7f3a9c21",
+  "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+  "session_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "device_ts": "2026-09-15T14:00:00.000Z",
+  "server_ts": "2026-09-15T14:00:00.180Z",
+  "position_ms": 0,
+  "country_playback": "CO",
+  "is_offline": false
+}

@@ -1,0 +1,37 @@
+{
+  "defecto": "reloj_desfasado",
+  "descripcion": "El reloj del dispositivo va 3 h atrasado: device_ts queda 3 h antes que server_ts aunque el evento es online (is_offline=false).",
+  "contexto": {
+    "desfase_device_menos_server_ms": -10800000
+  },
+  "eventos": [
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0201-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "start",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "e5f6a7b8-c9d0-4e1f-9a2b-3c4d5e6f7a81",
+      "device_ts": "2026-09-17T11:00:00.000Z",
+      "server_ts": "2026-09-17T14:00:00.250Z",
+      "position_ms": 0,
+      "country_playback": "CO",
+      "is_offline": false
+    },
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0202-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "end",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "e5f6a7b8-c9d0-4e1f-9a2b-3c4d5e6f7a81",
+      "device_ts": "2026-09-17T11:03:30.760Z",
+      "server_ts": "2026-09-17T14:03:31.010Z",
+      "position_ms": 210760,
+      "country_playback": "CO",
+      "is_offline": false
+    }
+  ]
+}
