@@ -99,9 +99,12 @@ def leer_fuentes(engine: Engine, directorio_f1: Path, fecha_base: date) -> Fuent
     catalogo = pd.read_parquet(ruta, columns=["track_id", "titular_id", "duration_ms"])
     con_contrato = {(t, titular) for t, titular in contratos}
     pistas = sorted(
-        Pista(str(f.track_id), int(f.duration_ms))
-        for f in catalogo.itertuples(index=False)
-        if (str(f.track_id), str(f.titular_id)) in con_contrato
+        (
+            Pista(str(f.track_id), int(f.duration_ms))
+            for f in catalogo.itertuples(index=False)
+            if (str(f.track_id), str(f.titular_id)) in con_contrato
+        ),
+        key=lambda p: p.track_id,
     )
     if not pistas:
         raise ValueError(
