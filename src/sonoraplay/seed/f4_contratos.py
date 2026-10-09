@@ -81,11 +81,10 @@ def generar(fuentes: FuentesF1, cfg: ContratosConfig) -> tuple[list[dict], list[
             corte = cfg.fecha_inicio + timedelta(days=14)
             nuevo = rng.randint(cfg.porcentaje_min, cfg.porcentaje_max)
             if nuevo == porcentaje:
-                nuevo = (
-                    cfg.porcentaje_min
-                    if porcentaje != cfg.porcentaje_min
-                    else cfg.porcentaje_max
-                )
+                if porcentaje != cfg.porcentaje_min:
+                    nuevo = cfg.porcentaje_min
+                else:
+                    nuevo = cfg.porcentaje_max
             periodos = [
                 (cfg.fecha_inicio, corte - timedelta(days=1), porcentaje),
                 (corte, None, nuevo),
