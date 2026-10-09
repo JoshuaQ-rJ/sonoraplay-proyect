@@ -157,17 +157,26 @@ class _Generador:
         self.paises: dict[str, str] = {}
         self.eventos: list[dict] = []
         self.sesiones = 0
-        self.pistas_relleno = [p for p in fuentes.pistas if p.duration_ms >= 2]
+        self.par_d: tuple[str, str] | None = None  # (usuario, pista) del escenario D
 
-    def pista(self, minimo_ms: int, maximo_ms: int | None = None) -> Pista:
-        candidatas = [
+    def elegir(self, minimo_ms: int, maximo_ms: int | None = None) -> tuple[Usuario, Pista]:
+        """Usuario y pista al azar, sin repetir el par del escenario D salvo que sea el único.
+
+        Así ninguna otra sesión suma reproducciones válidas al grupo de D y su tope queda exacto.
+        """
+        usuarios = self.fuentes.usuarios
+        pistas = [
             p
             for p in self.fuentes.pistas
             if p.duration_ms >= minimo_ms and (maximo_ms is None or p.duration_ms <= maximo_ms)
         ]
-        if not candidatas:
-            raise ValueError(f"no hay pistas de al menos {minimo_ms} ms para los escenarios")
-        return self.rng.choice(candidatas)
+        if not pistas:
+            raise ValueError(f"no hay pistas de al menos {minimo_ms} ms para el simulador")
+        unico = len(usuarios) == 1 and len(pistas) == 1
+        while True:
+            u, p = self.rng.choice(usuarios), self.rng.choice(pistas)
+            if unico or (u.usuario_id, p.track_id) != self.par_d:
+                return u, p
 
     def pais(self, u: Usuario) -> str:
         if u.usuario_id not in self.paises:
@@ -207,33 +216,32 @@ class _Generador:
         """A, B, C y D con valores fijos: ejercitan RN-01 y RN-02 en cada archivo."""
         umbral = self.cfg.reglas.segundos_min_validez * 1_000
         manana = self.dia + timedelta(hours=8)
-        usuarios = self.fuentes.usuarios
 
+        # D: tope + 1 sesiones completas del mismo usuario y pista, el mismo día UTC (RN-02).
+        # Se elige primero para que ninguna otra sesión use su par. Cada sesión empieza de 30 s
+        # a 5 min después de la anterior (ver `sesion`).
+        u_d, p_d = self.elegir(max(60_000, umbral), DURACION_MAX_ESCENARIO_D)
+        self.par_d = (u_d.usuario_id, p_d.track_id)
+        for _ in range(self.cfg.reglas.max_reproducciones_dia + 1):
+            self.sesion(u_d, p_d, manana, guion([p_d.duration_ms], [], p_d.duration_ms))
         # A: el tramo más largo se queda 1 s corto del umbral → no válida (RN-01).
-        p = self.pista(umbral)
+        u, p = self.elegir(umbral)
         pasos = guion([umbral - 1_000], [5_000], p.duration_ms, cerrar_en_pausa=a_en_tres_eventos)
-        self.sesion(self.rng.choice(usuarios), p, manana, pasos)
+        self.sesion(u, p, manana, pasos)
         # B: exactamente el umbral → válida, en el límite.
-        p = self.pista(umbral)
-        self.sesion(self.rng.choice(usuarios), p, manana, guion([umbral], [], p.duration_ms))
+        u, p = self.elegir(umbral)
+        self.sesion(u, p, manana, guion([umbral], [], p.duration_ms))
         # C: 15 s + pausa + 20 s → no válida: la pausa reinicia el conteo (EG-11 Q1).
         tramos = [umbral // 2, umbral * 2 // 3]
-        p = self.pista(sum(tramos))
-        self.sesion(self.rng.choice(usuarios), p, manana, guion(tramos, [10_000], p.duration_ms))
-        # D: tope + 1 sesiones completas del mismo usuario y pista, el mismo día UTC (RN-02).
-        u = self.rng.choice(usuarios)
-        p = self.pista(max(60_000, umbral), DURACION_MAX_ESCENARIO_D)
-        # Cada sesión empieza de 30 s a 5 min después de la anterior (ver `sesion`).
-        for _ in range(self.cfg.reglas.max_reproducciones_dia + 1):
-            self.sesion(u, p, manana, guion([p.duration_ms], [], p.duration_ms))
+        u, p = self.elegir(sum(tramos))
+        self.sesion(u, p, manana, guion(tramos, [10_000], p.duration_ms))
 
     def relleno(self, restantes: int) -> None:
         """Sesiones aleatorias de 2 a 4 eventos hasta completar exactamente `restantes`."""
         while restantes:
             tamanos = [n for n in (2, 3, 4) if n <= restantes and restantes - n != 1]
             n = self.rng.choice(tamanos)
-            u = self.rng.choice(self.fuentes.usuarios)
-            p = self.rng.choice(self.pistas_relleno)
+            u, p = self.elegir(2)
             d = p.duration_ms
             pausas = [self.rng.randint(2_000, 120_000)]
             if n == 4:
