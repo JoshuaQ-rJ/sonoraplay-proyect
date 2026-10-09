@@ -31,5 +31,21 @@ services:
       postgres:
         condition: service_healthy
 
+  # EG-21 · API pública de sellos. El secreto de firma sale de .env y nunca del repo (ADR-0006).
+  # Si falta, solo este contenedor falla al arrancar, con un mensaje claro; postgres sigue en pie.
+  api-titulares:
+    build:
+      context: .
+      dockerfile: docker/api-titulares.Dockerfile
+    container_name: sonoraplay-api-titulares
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
+      API_TITULARES_JWT_SECRET: ${API_TITULARES_JWT_SECRET:-}
+    ports:
+      - "${API_TITULARES_PORT:-8001}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
