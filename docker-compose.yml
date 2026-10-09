@@ -17,5 +17,19 @@ services:
       timeout: 3s
       retries: 10
 
+  # EG-20 · API interna de contratos F4. Las credenciales salen de .env; el host es "postgres".
+  api-contratos:
+    build:
+      context: .
+      dockerfile: docker/api-contratos.Dockerfile
+    container_name: sonoraplay-api-contratos
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
+    ports:
+      - "${API_CONTRATOS_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
