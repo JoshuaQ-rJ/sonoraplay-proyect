@@ -151,6 +151,36 @@ uv run --env-file .env python -m pytest tests/api_contratos -v
 
 Reglas, ejemplos de request y response y despliegue: [docs/servicios/api-contratos.md](docs/servicios/api-contratos.md).
 
+## API de sellos (EG-21)
+
+API **pública** (en AWS, detrás del ALB con HTTPS) con la que cada sello consulta solo su reporte de regalías: reproducciones válidas, participación en la bolsa, % contractual, regalía en USD e ID de liquidación, por mes y país (RF-05). Se autentica con un JWT HS256 cuyo `sub` es el titular; pedir datos de otro titular da 403, exista o no (RN-11, CA-08, [ADR-0006](docs/adr/0006-autenticacion-aislamiento-sellos.md)). Lee las tablas de `db/ddl/003_reportes_regalias.sql`, que son el contrato que llenan la EG-23 y la EG-37.
+
+| Endpoint | Para qué |
+|---|---|
+| `GET /health` | Estado de la API y de PostgreSQL (sin token) |
+| `GET /me/reportes?periodo=YYYY-MM&pais=XX` | Reporte del titular del token (recomendado) |
+| `GET /titulares/{titular_id}/reportes?periodo=&pais=` | Lo mismo con el titular en el path; otro titular → 403 |
+
+```bash
+# Una vez: secreto aleatorio en .env (API_TITULARES_JWT_SECRET); nunca el de .env.example
+uv run python -c "import secrets; print(secrets.token_urlsafe(48))"
+
+# Token de desarrollo para un titular (solo se imprime)
+uv run --env-file .env python -m sonoraplay.api_titulares.tokens --titular <uuid> --horas 8
+
+# Local: abrir http://localhost:8001/docs y usar Authorize
+uv run --env-file .env python -m uvicorn sonoraplay.api_titulares.main:app --port 8001
+
+# En Docker
+docker compose up -d --build api-titulares
+curl http://localhost:8001/health
+
+# Pruebas (incluye la de aislamiento CA-08)
+uv run --env-file .env python -m pytest tests/api_titulares -v
+```
+
+Autenticación, ejemplos 200/401/403, modelo de lectura y contrato para la EG-23 / EG-37: [docs/servicios/api-titulares.md](docs/servicios/api-titulares.md).
+
 ## Eventos F2 (EG-15)
 
 Esquema JSON (draft 2020-12) de los eventos de reproducción: `schemas/f2_evento.schema.json`. Campos, defectos inyectados y cómo se reconstruye una reproducción a partir de los eventos: `docs/datos/eventos-f2.md`. Deduplicación por `event_id`: [ADR-0004](docs/adr/0004-esquema-eventos-f2.md).
@@ -250,13 +280,13 @@ Un ítem se cierra en Jira solo si:
 .github/
   workflows/ci.yml             CI: lint, pruebas y secretos
   pull_request_template.md     Checklist de la Definition of Done
-db/ddl/                        DDL de PostgreSQL (se aplica al crear el volumen)
+db/ddl/                        DDL de PostgreSQL: F3, F4 y reporte de regalías (se aplica al crear el volumen)
 docs/analisis/                 Ambigüedades de las reglas de negocio y supuestos (EG-11)
 docs/arquitectura/             Arquitectura v1 y diagrama (EG-16)
 docs/adr/                      Registro de decisiones de arquitectura (ADR)
 docs/datos/                    Modelos de datos y decisiones
-docs/servicios/                Documentación de los servicios (API de contratos F4)
-docker/                        Dockerfiles por componente (api-contratos)
+docs/servicios/                Documentación de los servicios (API de contratos F4 y API de sellos)
+docker/                        Dockerfiles por componente (api-contratos, api-titulares)
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
@@ -264,11 +294,13 @@ src/sonoraplay/reglas/         RN-01, RN-02, RN-03 y reconstrucción de sesiones
 src/sonoraplay/simulador/      Simulador F2 mínimo (EG-19)
 src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
 src/sonoraplay/api_contratos/  API de contratos F4 (FastAPI + SQLModel)
+src/sonoraplay/api_titulares/  API pública de sellos con JWT y aislamiento por titular (EG-21)
+src/sonoraplay/reporte_regalias.py  Contrato del reporte de regalías (FilaReporte) para EG-23 / EG-37
 src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
 notebooks/                     Exploración de datos
 tests/                         Pruebas con pytest
-docker-compose.yml             PostgreSQL 16 local y la API de contratos F4
+docker-compose.yml             PostgreSQL 16 local, la API de contratos F4 y la API de sellos
 .dockerignore                  Lo que nunca entra a una imagen (.env, .venv, datos)
 .env.example                   Variables de entorno sin valores reales
 .pre-commit-config.yaml        Revisiones antes de cada commit (Ruff y Gitleaks)
