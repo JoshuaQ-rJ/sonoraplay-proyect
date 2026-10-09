@@ -17,9 +17,7 @@ from sqlalchemy import Engine, MetaData, Table, create_engine, func, select
 from sqlalchemy.dialects.postgresql import insert
 
 from sonoraplay.config import ContratosConfig, database_url
-from sonoraplay.seed.f3_suscripciones import NAMESPACE
-
-PAISES = ["CO", "MX", "BR", "AR", "CL", "PE"]
+from sonoraplay.seed.f3_suscripciones import NAMESPACE, PAISES
 
 
 def det_uuid(semilla: int, entidad: str, *partes: object) -> uuid.UUID:
@@ -54,7 +52,18 @@ def leer_fuentes(directorio: Path) -> FuentesF1:
 
 
 def generar(fuentes: FuentesF1, cfg: ContratosConfig) -> tuple[list[dict], list[dict], list[dict]]:
-    """Genera titulares, condiciones contractuales y exclusiones para cargar en PostgreSQL."""
+    """Genera titulares, condiciones contractuales y exclusiones para cargar en PostgreSQL.
+
+    Las condiciones se sortean una vez por titular y se aplican a **todas** sus pistas, para
+    que la liquidación siempre encuentre un % (RN-06):
+
+    - Condición general (`territorio=None`): un período desde `fecha_inicio`; si el titular
+      cambia de % a mitad de mes (RN-07), dos períodos que se parten el día 15.
+    - Condición territorial (Q7): si el titular tiene territorio, se **agrega** una condición
+      con su propio % para ese país; en los demás países rige la general.
+    - Exclusión (RN-08): si el titular excluye un país, va en todos los períodos de la
+      condición general, siempre el mismo y distinto del territorio.
+    """
     titulares_db = fuentes.titulares[["titular_id", "nombre", "tipo", "pais"]].to_dict("records")
     por_titular = {
         str(t): sorted(g["track_id"].astype(str).tolist())
@@ -74,7 +83,6 @@ def generar(fuentes: FuentesF1, cfg: ContratosConfig) -> tuple[list[dict], list[
         territorial = rng.random() < cfg.fraccion_condiciones_territoriales
         territorio = rng.choice(PAISES) if territorial else None
         porcentaje = rng.randint(cfg.porcentaje_min, cfg.porcentaje_max)
-        track_id = rng.choice(tracks)
 
         periodos = [(cfg.fecha_inicio, None, porcentaje)]
         if cambia:
@@ -89,24 +97,29 @@ def generar(fuentes: FuentesF1, cfg: ContratosConfig) -> tuple[list[dict], list[
                 (cfg.fecha_inicio, corte - timedelta(days=1), porcentaje),
                 (corte, None, nuevo),
             ]
+        condiciones = [(None, periodos)]
+        if territorio:
+            pct_territorial = rng.randint(cfg.porcentaje_min, cfg.porcentaje_max)
+            condiciones.append((territorio, [(cfg.fecha_inicio, None, pct_territorial)]))
+        pais_excluido = rng.choice([p for p in PAISES if p != territorio]) if excluye else None
 
-        for n, (desde, hasta, pct) in enumerate(periodos):
-            cid = det_uuid(cfg.semilla, "contrato", tid, track_id, territorio or "general", n)
-            contratos.append(
-                {
-                    "contrato_id": cid,
-                    "titular_id": uuid.UUID(tid),
-                    "track_id": track_id,
-                    "porcentaje": pct,
-                    "territorio": territorio,
-                    "valido_desde": desde,
-                    "valido_hasta": hasta,
-                }
-            )
-            if excluye:
-                candidatos = [p for p in PAISES if p != territorio]
-                pais = rng.choice(candidatos)
-                exclusiones.append({"contrato_id": cid, "pais": pais})
+        for track_id in tracks:
+            for terr, periodos_cond in condiciones:
+                for n, (desde, hasta, pct) in enumerate(periodos_cond):
+                    cid = det_uuid(cfg.semilla, "contrato", tid, track_id, terr or "general", n)
+                    contratos.append(
+                        {
+                            "contrato_id": cid,
+                            "titular_id": uuid.UUID(tid),
+                            "track_id": track_id,
+                            "porcentaje": pct,
+                            "territorio": terr,
+                            "valido_desde": desde,
+                            "valido_hasta": hasta,
+                        }
+                    )
+                    if terr is None and pais_excluido:
+                        exclusiones.append({"contrato_id": cid, "pais": pais_excluido})
 
     return titulares_db, contratos, exclusiones
 

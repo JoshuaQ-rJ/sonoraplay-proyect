@@ -40,7 +40,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Assumption:** Yes. The 30 seconds must be continuous. A pause, seek or interruption before reaching the threshold resets the count. A play is valid when one uninterrupted segment is ≥ 30 s (exactly 30 s is valid).
 
-**Impact:** `src/sonoraplay/reglas/validez.py` (created in EG-17) and CA-01 tests (EG-17, To Do — its tests must cover "15 s + pause + 20 s = not valid"); Spark Silver layer (EG-35).
+**Impact:** `src/sonoraplay/reglas/validez.py` (created in EG-17) and CA-01 tests (EG-17, done in PR #12 — `tests/reglas/test_validez.py` covers "15 s + pause + 20 s = not valid"); Spark Silver layer (EG-35).
 
 ### Q2 — RN-03: Artist listener threshold
 
@@ -58,7 +58,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Why:** RN-03 says excluded streams "remain under review", which only makes sense if they can be paid later; and paying fraud by mistake is costlier for the labels than a delayed payment to a legitimate user. The false-positive cost is controlled by CA-10 (< 2%).
 
-**Impact:** Exclusion period in `config.py` (EG-18, To Do — set the value to match this assumption when it is implemented); ADR-0005 (thresholds and period), ADR-0007 (adjustments), fraud report EG-43.
+**Impact:** Exclusion period in `config.py` (EG-18, done in PR #8 — `ReglasFraudeConfig.periodo_exclusion = "mes"`); ADR-0005 (thresholds and period), ADR-0007 (adjustments), fraud report EG-43.
 
 ### Q4 — RN-02 / RN-04: Time zone
 
@@ -74,7 +74,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Assumption:** Use the net amount stored in the F3 subscription source, before applying the 52% allocation. No taxes, store fees or commissions are invented unless the source provides them.
 
-**Impact:** F3 must expose a net amount per payment (EG-13 — verify the column exists); pool function in EG-23 and EG-37.
+**Impact:** F3 exposes it as `pagos.monto_usd` with `estado = 'aprobado'` (EG-13, PR #4); that amount is taken as net; pool function in EG-23 and EG-37.
 
 ### Q6 — RN-10: Family accounts across countries
 
@@ -90,7 +90,7 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Assumption:** The F4 model supports an optional territory on each contract condition. A territory-specific percentage is applied only when the contract explicitly defines one; otherwise the general percentage applies. Validity date (RN-07) and territorial exclusions (RN-08) still apply.
 
-**Impact:** F4 seed and API (EG-14, EG-20), settlement join (EG-23).
+**Impact:** F4 seed (EG-14, done in PR #13: `contratos.territorio IS NULL` is the general condition), F4 API (EG-20), settlement join (EG-23).
 
 ### Q8 — Free plan and subscription denominator
 
@@ -119,7 +119,7 @@ Royalty per rights holder and country = sum of both components × contractual % 
 
 **Question:** Must the final AWS demo process the full simulated volume of ~900,000 users, or may it use a representative subset?
 
-**Assumption:** Development, testing and the AWS demo use a configurable subset (`--volume dev|full`). The seed must still be able to generate the full 900k volume locally. A full run on AWS depends on the budget and is decided in the cost analysis.
+**Assumption:** Development, testing and the AWS demo use a configurable subset (`--modo dev|completo`, 10,000 or 900,000 users). The seed must still be able to generate the full 900k volume locally. A full run on AWS depends on the budget and is decided in the cost analysis.
 
 **Impact:** EG-28 (seed on RDS), EG-45 (full month on AWS), EG-32 (costs), E-14 demo.
 

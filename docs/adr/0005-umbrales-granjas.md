@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-02 |
 | Historia que lo origina | HU 09 · EG-18 |
 | Responsable | María Clara |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | Aprobado en el PR #8 (fusionado el 2026-10-05) |
 | Referencias | RN-03, CA-03, CA-10, EG-11 Q2 / Q3 / Q4, ADR-0002, ADR-0007 |
 
 ## 1. Contexto
@@ -82,7 +82,7 @@ Los casos en el límite (exactamente 20 h, 70 %, 1.000 oyentes, 5 cuentas) **no*
 - **Riesgos y mitigación:**
   - *Falsos positivos por encima del 2 %* → se miden en EG-43 y se recalibra `ReglasFraudeConfig` (y este ADR pasa a *Reemplazado*).
   - *Granjas adaptadas a los umbrales* (19 h, 69 %, 5 cuentas) → RN-03 no las cubre por diseño; EG-43 reporta cuentas cercanas a los umbrales para vigilarlas.
-  - *El esquema de `Reproduccion` difiere de F2* → se alineará con el esquema de EG-15 (ADR-0004).
+  - *El esquema de `Reproduccion` difiere de F2* → la correspondencia quedó documentada en EG-15 ([`docs/datos/eventos-f2.md`](../datos/eventos-f2.md), [ADR-0004](0004-esquema-eventos-f2.md)), y Silver (EG-35) arma el registro.
 
 ## 6. Cómo sabremos que funciona
 
