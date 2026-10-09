@@ -17,8 +17,9 @@ from sonoraplay.config import ReglasValidezConfig
 class ReproduccionValidez:
     """Reproducción ya reconstruida, con lo mínimo para RN-01 y RN-02.
 
-    Se alineará con el esquema de eventos F2 de EG-15 (ADR-0004). `ms_continuos_max` es el tramo
-    continuo más largo: una pausa, un seek o una interrupción cortan el tramo (EG-11 Q1).
+    Sale de los eventos F2 (EG-15, ADR-0004); la correspondencia de campos está en
+    `docs/datos/eventos-f2.md`. `ms_continuos_max` es el tramo continuo más largo: una pausa,
+    un seek o una interrupción cortan el tramo (EG-11 Q1).
     `inicio` debe ser aware: un datetime naive lanza ValueError y cualquier otra zona se normaliza
     a UTC (ADR-0002).
     """

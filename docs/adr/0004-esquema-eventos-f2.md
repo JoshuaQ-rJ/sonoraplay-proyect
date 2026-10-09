@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-07 |
 | Historia que lo origina | HU 06 · EG-15 |
 | Responsable | Andrea |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | María Clara |
 | Referencias | F2, RNF-04, RN-01, RN-02, RN-03, RN-04, RN-08, EG-11 Q1 / Q4 / Q6, ADR-0002, ADR-0005, ADR-0008, ADR-0013 |
 
 ## 1. Contexto
@@ -79,7 +79,7 @@ Hay que fijar dos cosas: el contrato del evento (campos, tipos, formato de fecha
   - Agregar un campo obliga a publicar una versión nueva del esquema.
 - **Riesgos y mitigación:**
   - *`rfc3339-validator` no está instalado en producción* (hoy llega solo con el grupo dev, vía `jupyter`) → el patrón con `Z` garantiza UTC y la prueba `test_format_checker_valida_de_verdad_uuid_y_date_time` falla si el checker deja de validar. Si se valida en producción con este módulo, se agrega `jsonschema[format-nongpl]` a las dependencias (decisión pendiente del equipo).
-  - *Nombres distintos entre F2 y `Reproduccion`* (`user_id`/`cuenta_id`, `device_id`/`dispositivo_id`, artista como nombre y no id) → la correspondencia está documentada en `docs/datos/eventos-f2.md`; EG-17 agrega `track_id` y `ms_tramo_max` a la reproducción.
+  - *Nombres distintos entre F2 y `Reproduccion`* (`user_id`/`cuenta_id`, `device_id`/`dispositivo_id`, artista como nombre y no id) → la correspondencia está documentada en `docs/datos/eventos-f2.md`; EG-17 (PR #12) puso `track_id` y `ms_continuos_max` en `ReproduccionValidez`; Silver (EG-35) une ambas clases en un solo registro.
 
 ## 6. Cómo sabremos que funciona
 

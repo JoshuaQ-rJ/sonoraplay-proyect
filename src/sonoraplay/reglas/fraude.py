@@ -25,8 +25,10 @@ VALIDA_PARA_FRAUDE: EstadoFraude = "valida_para_fraude"
 class Reproduccion:
     """Reproducción mínima para RN-03.
 
-    Se alineará con el esquema de eventos F2 de EG-15 (ADR-0004). `inicio` debe ser aware:
-    un datetime naive lanza ValueError y cualquier otra zona se normaliza a UTC (ADR-0002).
+    Sale de los eventos F2 (EG-15, ADR-0004); la correspondencia de campos está en
+    `docs/datos/eventos-f2.md` (`user_id` → `cuenta_id`, `device_id` → `dispositivo_id`).
+    `inicio` debe ser aware: un datetime naive lanza ValueError y cualquier otra zona se
+    normaliza a UTC (ADR-0002).
     """
 
     cuenta_id: str

@@ -86,17 +86,20 @@ Este es el contrato que usan EG-17 (RN-01, RN-02) y EG-18 (RN-03). Una **sesión
 5. **Resolver el artista** con el catálogo F1: `track_id` → `artista_principal`. Sin coincidencia → cuarentena (defecto 3).
 6. **Emitir la reproducción** con los campos de la tabla siguiente.
 
-### Correspondencia con `Reproduccion` (`src/sonoraplay/reglas/fraude.py`)
+### Correspondencia con `Reproduccion` (`reglas/fraude.py`, RN-03) y `ReproduccionValidez` (`reglas/validez.py`, RN-01/RN-02)
 
-| Reproducción | Sale de | ¿Existe hoy en `Reproduccion`? |
+Hoy son dos clases; Silver (EG-35) arma un solo registro con todos estos campos.
+
+| Reproducción | Sale de | ¿Dónde existe hoy? |
 |---|---|---|
+| `reproduccion_id` | `session_id` (una sesión es una reproducción) | En `ReproduccionValidez` (EG-17); desempata el orden del tope diario. |
 | `cuenta_id` | `user_id` | Sí, **con otro nombre** (F2 usa `user_id`, F3 usa `usuario_id`) |
 | `dispositivo_id` | `device_id` | Sí, **con otro nombre** |
 | `artista_id` | `track_id` → `artista_principal` del catálogo F1 | Sí, pero **F1 no tiene un id de artista**: hoy es el nombre del artista principal (texto). Dos artistas homónimos se juntarían. |
 | `inicio` | `device_ts` corregido del `start`, en UTC | Sí (aware y normalizado a UTC) |
 | `ms_escuchados` | **suma** de los ms de todos los tramos | Sí. RN-03 señal 1 lo usa como horas escuchadas. |
-| `track_id` | `track_id` | **No.** RN-02 (10 por pista, usuario y día) lo necesita; se agrega en EG-17. |
-| `ms_tramo_max` | el **mayor** tramo continuo | **No.** RN-01 lo necesita: válida si ≥ 30 000 ms (EG-11 Q1); se agrega en EG-17. |
+| `track_id` | `track_id` | En `ReproduccionValidez` (EG-17); lo usa RN-02 (10 por pista, usuario y día). |
+| `ms_continuos_max` | el **mayor** tramo continuo | En `ReproduccionValidez` (EG-17); lo usa RN-01: válida si ≥ 30 000 ms (EG-11 Q1). |
 | `pais_reproduccion`, `is_offline`, `sincronizado` (`server_ts` del último evento) | `country_playback`, `is_offline`, `server_ts` | **No.** RN-08 y RN-04 (EG-22). |
 
 **Ojo con `Reproduccion.fin`:** se calcula como `inicio + ms_escuchados`, es decir, como si los tramos fueran seguidos. Con pausas largas el fin real es más tarde. Para RN-03 señal 1 la diferencia es menor (cuenta lo escuchado, no lo transcurrido), pero si EG-18 necesita precisión se deberían pasar los tramos en vez de una sola reproducción.
@@ -112,6 +115,6 @@ La sesión de `schemas/ejemplos/validos/` (`start`, `pause`, `resume`, `end`):
 | `resume` | 14:01:30.000Z | 45 000 | abre tramo 2 |
 | `end` | 14:04:15.760Z | 210 760 | cierra tramo 2 = **165 760 ms** |
 
-Resultado: `cuenta_id = 3b6f1a2c-…`, `dispositivo_id = android-7f3a9c21`, `track_id = 23Mcmg5O8rBKAOzxvrTjnD`, `artista_id = "Kitri"`, `inicio = 2026-09-15T14:00:00Z`, `ms_escuchados = 210 760`, `ms_tramo_max = 165 760` → válida para RN-01.
+Resultado: `cuenta_id = 3b6f1a2c-…`, `dispositivo_id = android-7f3a9c21`, `track_id = 23Mcmg5O8rBKAOzxvrTjnD`, `artista_id = "Kitri"`, `inicio = 2026-09-15T14:00:00Z`, `ms_escuchados = 210 760`, `ms_continuos_max = 165 760` → válida para RN-01.
 
-En `evento_sin_fin.json` el tramo 1 cierra con 40 000 ms y el tramo 2 queda abierto (0 ms): `ms_escuchados = 40 000`, `ms_tramo_max = 40 000` → válida para RN-01 aunque nunca llegó el `end`, y marcada `sin_fin`.
+En `evento_sin_fin.json` el tramo 1 cierra con 40 000 ms y el tramo 2 queda abierto (0 ms): `ms_escuchados = 40 000`, `ms_continuos_max = 40 000` → válida para RN-01 aunque nunca llegó el `end`, y marcada `sin_fin`.

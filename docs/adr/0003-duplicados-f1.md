@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-02 |
 | Historia que lo origina | HU 03 · EG-12 |
 | Responsable | María Clara |
-| Revisó | Pendiente (Andrea o Joshua, en el PR) |
+| Revisó | Aprobado en el PR #7 (fusionado el 2026-10-02) |
 | Referencias | F1, RN-03, Q9 de EG-11 ([ambiguedades-rn.md](../analisis/ambiguedades-rn.md)) |
 
 ## 1. Contexto
