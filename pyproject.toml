@@ -1,0 +1,49 @@
+[project]
+name = "sonoraplay"
+version = "0.1.0"
+description = "SonoraPlay Regalías — plataforma de datos (Proyecto 08)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Joshua Quintero", email = "joshua.quintero@outlook.com" },
+    { name = "María Clara Manjarrés" },
+    { name = "Andrea Zárate" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
+    "faker>=30",
+    "jsonschema>=4.23",
+    # Topes: el Control de aplicaciones de Windows bloquea DLL de pandas 3.0.6 y pyarrow 25.0.1
+    "pandas>=2.2,<3",
+    "pyarrow>=17,<25",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pre-commit>=4.6.2",
+    "pytest>=8",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.9",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F: errores de estilo PEP 8 y de lógica · I: orden de imports
+# B: bugs comunes · UP: sintaxis moderna de Python
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

@@ -1,0 +1,38 @@
+{
+  "defecto": "pais_facturacion_distinto",
+  "descripcion": "La cuenta factura en Colombia (F3) pero reproduce en México. No es un error de formato: el evento solo trae country_playback; el país de facturación sale de F3.",
+  "contexto": {
+    "user_id": "7d2e9f41-0c3b-4a6e-8f15-2b9c4d7e1a03",
+    "pais_facturacion_f3": "CO"
+  },
+  "eventos": [
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0501-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "start",
+      "user_id": "7d2e9f41-0c3b-4a6e-8f15-2b9c4d7e1a03",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "b8c9d0e1-f2a3-4b4c-8d5e-6f7a8b9cadb4",
+      "device_ts": "2026-09-20T02:15:00.000Z",
+      "server_ts": "2026-09-20T02:15:00.210Z",
+      "position_ms": 0,
+      "country_playback": "MX",
+      "is_offline": false
+    },
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0502-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "end",
+      "user_id": "7d2e9f41-0c3b-4a6e-8f15-2b9c4d7e1a03",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "b8c9d0e1-f2a3-4b4c-8d5e-6f7a8b9cadb4",
+      "device_ts": "2026-09-20T02:18:30.760Z",
+      "server_ts": "2026-09-20T02:18:30.990Z",
+      "position_ms": 210760,
+      "country_playback": "MX",
+      "is_offline": false
+    }
+  ]
+}

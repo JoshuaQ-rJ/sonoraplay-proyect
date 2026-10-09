@@ -1,0 +1,54 @@
+{
+  "defecto": "evento_sin_fin",
+  "descripcion": "La sesión arranca, pausa y reanuda, pero nunca llega su end ni su skip (la app se cerró o perdió conexión). El último tramo queda abierto.",
+  "contexto": {
+    "eventos_esperados_y_ausentes": [
+      "end",
+      "skip"
+    ]
+  },
+  "eventos": [
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0101-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "start",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "d4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70",
+      "device_ts": "2026-09-16T20:00:00.000Z",
+      "server_ts": "2026-09-16T20:00:00.200Z",
+      "position_ms": 0,
+      "country_playback": "CO",
+      "is_offline": false
+    },
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0102-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "pause",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "d4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70",
+      "device_ts": "2026-09-16T20:00:40.000Z",
+      "server_ts": "2026-09-16T20:00:40.190Z",
+      "position_ms": 40000,
+      "country_playback": "CO",
+      "is_offline": false
+    },
+    {
+      "schema_version": "1.0",
+      "event_id": "c7e1d0a4-0103-4f2b-9a6e-5b3c2d1e0f01",
+      "event_type": "resume",
+      "user_id": "3b6f1a2c-5d4e-4f7a-9b8c-1d2e3f4a5b6c",
+      "device_id": "android-7f3a9c21",
+      "track_id": "23Mcmg5O8rBKAOzxvrTjnD",
+      "session_id": "d4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70",
+      "device_ts": "2026-09-16T20:05:00.000Z",
+      "server_ts": "2026-09-16T20:05:00.170Z",
+      "position_ms": 40000,
+      "country_playback": "CO",
+      "is_offline": false
+    }
+  ]
+}
