@@ -126,6 +126,31 @@ Opciones: `--datos-f1` (carpeta con `titulares.parquet` y `catalogo_f1.parquet`;
 
 Modelo y reglas: [docs/datos/modelo-f4.md](docs/datos/modelo-f4.md).
 
+## API de contratos F4 (EG-20)
+
+API interna con FastAPI y SQLModel. Spark la consulta para obtener el % vigente de un titular en una fecha (RN-07), con su condición territorial (Q7) y sus exclusiones (RN-08). Mapea las tablas F4 de la EG-14 sin modificar el DDL. No pasa por el ALB: en AWS se llama por DNS privado.
+
+| Endpoint | Para qué |
+|---|---|
+| `GET /health` | Estado de la API y de PostgreSQL (503 si la base no responde) |
+| `GET /titulares/{titular_id}/porcentaje?fecha=YYYY-MM-DD&track_id=&pais=` | % vigente en la fecha |
+| `GET /titulares/{titular_id}/condiciones?limit=&offset=` | Períodos de vigencia y exclusiones, paginados |
+
+```bash
+# Local (requiere PostgreSQL con el seed F4 cargado)
+uv run --env-file .env python -m uvicorn sonoraplay.api_contratos.main:app --port 8000
+# Abrir http://localhost:8000/docs
+
+# En Docker
+docker compose up -d --build api-contratos
+curl http://localhost:8000/health
+
+# Pruebas
+uv run --env-file .env python -m pytest tests/api_contratos -v
+```
+
+Reglas, ejemplos de request y response y despliegue: [docs/servicios/api-contratos.md](docs/servicios/api-contratos.md).
+
 ## Eventos F2 (EG-15)
 
 Esquema JSON (draft 2020-12) de los eventos de reproducción: `schemas/f2_evento.schema.json`. Campos, defectos inyectados y cómo se reconstruye una reproducción a partir de los eventos: `docs/datos/eventos-f2.md`. Deduplicación por `event_id`: [ADR-0004](docs/adr/0004-esquema-eventos-f2.md).
@@ -230,17 +255,21 @@ docs/analisis/                 Ambigüedades de las reglas de negocio y supuesto
 docs/arquitectura/             Arquitectura v1 y diagrama (EG-16)
 docs/adr/                      Registro de decisiones de arquitectura (ADR)
 docs/datos/                    Modelos de datos y decisiones
+docs/servicios/                Documentación de los servicios (API de contratos F4)
+docker/                        Dockerfiles por componente (api-contratos)
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
 src/sonoraplay/reglas/         RN-01, RN-02, RN-03 y reconstrucción de sesiones F2 (funciones puras)
 src/sonoraplay/simulador/      Simulador F2 mínimo (EG-19)
 src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
+src/sonoraplay/api_contratos/  API de contratos F4 (FastAPI + SQLModel)
 src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
 notebooks/                     Exploración de datos
 tests/                         Pruebas con pytest
-docker-compose.yml             PostgreSQL 16 local
+docker-compose.yml             PostgreSQL 16 local y la API de contratos F4
+.dockerignore                  Lo que nunca entra a una imagen (.env, .venv, datos)
 .env.example                   Variables de entorno sin valores reales
 .pre-commit-config.yaml        Revisiones antes de cada commit (Ruff y Gitleaks)
 LICENSE                        Licencia MIT
