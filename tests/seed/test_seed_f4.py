@@ -36,6 +36,7 @@ def fuentes():
     catalogo = pd.DataFrame(
         [
             {"track_id": "A" * 22, "titular_id": titulares.iloc[0].titular_id},
+            {"track_id": "D" * 22, "titular_id": titulares.iloc[0].titular_id},
             {"track_id": "B" * 22, "titular_id": titulares.iloc[1].titular_id},
             {"track_id": "C" * 22, "titular_id": titulares.iloc[2].titular_id},
         ]
@@ -62,12 +63,19 @@ def test_cada_titular_tiene_contrato_y_track_de_f1(fuentes):
     assert all(c["track_id"] in tracks for c in contratos)
 
 
+def test_cada_pista_del_catalogo_tiene_condicion_general(fuentes):
+    _, contratos, _ = generar(fuentes, cfg())
+    generales = {c["track_id"] for c in contratos if c["territorio"] is None}
+    assert generales == set(fuentes.catalogo["track_id"])
+
+
 def test_cambios_mitad_mes_no_se_solapan(fuentes):
     _, contratos, _ = generar(fuentes, cfg())
-    por_titular = {}
+    por_condicion = {}
     for c in contratos:
-        por_titular.setdefault(c["titular_id"], []).append(c)
-    for periodos in por_titular.values():
+        if c["territorio"] is None:
+            por_condicion.setdefault((c["titular_id"], c["track_id"]), []).append(c)
+    for periodos in por_condicion.values():
         periodos.sort(key=lambda x: x["valido_desde"])
         assert len(periodos) == 2
         assert periodos[0]["valido_hasta"] == date(2026, 9, 14)
@@ -83,9 +91,25 @@ def test_porcentajes_entre_cero_y_cien(fuentes):
 def test_exclusiones_y_territorio_opcional(fuentes):
     _, contratos, exclusiones = generar(fuentes, cfg())
     assert exclusiones
-    assert all(c["territorio"] is not None for c in contratos)
+    # Cada (titular, pista) tiene una condición territorial además de la general.
+    territoriales = {}
+    for c in contratos:
+        if c["territorio"] is not None:
+            territoriales[(c["titular_id"], c["track_id"])] = c["territorio"]
+    generales = {(c["titular_id"], c["track_id"]) for c in contratos if c["territorio"] is None}
+    assert set(territoriales) == generales
+    # Las exclusiones solo están en contratos generales.
     por_id = {c["contrato_id"]: c for c in contratos}
-    assert all(e["pais"] != por_id[e["contrato_id"]]["territorio"] for e in exclusiones)
+    assert all(por_id[e["contrato_id"]]["territorio"] is None for e in exclusiones)
+    # El país excluido es distinto del territorio.
+    for e in exclusiones:
+        c = por_id[e["contrato_id"]]
+        assert e["pais"] != territoriales[(c["titular_id"], c["track_id"])]
+    # Cada titular excluye un solo país.
+    paises_por_titular = {}
+    for e in exclusiones:
+        paises_por_titular.setdefault(por_id[e["contrato_id"]]["titular_id"], set()).add(e["pais"])
+    assert all(len(paises) == 1 for paises in paises_por_titular.values())
 
 
 def test_misma_semilla_mismos_datos(fuentes):
@@ -97,7 +121,7 @@ def test_sin_cambios_ni_exclusiones_tambien_es_valido(fuentes):
         fuentes,
         cfg(fraccion_cambios=0, fraccion_exclusiones=0, fraccion_condiciones_territoriales=0),
     )
-    assert len(contratos) == len(fuentes.titulares)
+    assert len(contratos) == len(fuentes.catalogo)
     assert not exclusiones
     assert all(c["territorio"] is None and c["valido_hasta"] is None for c in contratos)
 
@@ -110,5 +134,6 @@ def test_seed_idempotente_en_postgresql(db_vacia, fuentes, tmp_path):
     segunda = ejecutar(db_vacia, tmp_path, cfg())
     assert primera == segunda
     assert primera["titulares_derechos"] == len(fuentes.titulares)
-    assert primera["contratos"] == 2 * len(fuentes.titulares)
-    assert primera["exclusiones_territoriales"] == primera["contratos"]
+    # 2 períodos generales + 1 territorial por pista; la exclusión va en los 2 generales.
+    assert primera["contratos"] == 3 * len(fuentes.catalogo)
+    assert primera["exclusiones_territoriales"] == 2 * len(fuentes.catalogo)
