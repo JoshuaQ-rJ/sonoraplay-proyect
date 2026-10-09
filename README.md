@@ -134,6 +134,23 @@ Esquema JSON (draft 2020-12) de los eventos de reproducción: `schemas/f2_evento
 uv run pytest tests/schemas -v     # ejemplos válidos, inválidos y con defectos
 ```
 
+## Simulador F2 mínimo (EG-19)
+
+Genera eventos de reproducción F2 en un archivo JSON Lines que lee el esqueleto (EG-24). Es determinista: la misma semilla produce el mismo archivo byte por byte. Cada archivo incluye los escenarios que ejercitan RN-01 (reproducciones de 29 s y de 30 s, y una pausa que reinicia el conteo) y RN-02 (11 reproducciones válidas de la misma pista por el mismo usuario el mismo día UTC). Necesita el catálogo F1, F3 y F4 cargados, en ese orden:
+
+```bash
+docker compose up -d --wait
+uv run python -m sonoraplay.catalogo
+uv run --env-file .env python -m sonoraplay.seed --modo dev
+uv run --env-file .env python -m sonoraplay.seed.f4_contratos
+uv run --env-file .env python -m sonoraplay.simulador --eventos 100 --semilla 42
+uv run --env-file .env python -m pytest tests/simulador tests/reglas/test_sesiones.py -v
+```
+
+Opciones: `--eventos N` (por defecto 100, mínimo 30), `--semilla N` (por defecto 42), `--salida` (por defecto `data/processed/eventos_f2.jsonl`) y `--datos-f1` (por defecto `data/processed`). F4 debe estar cargado sobre el mismo catálogo que se pasa en `--datos-f1`.
+
+Escenarios, reglas de cada sesión y reconstrucción de reproducciones (`reglas/sesiones.py`): [docs/datos/simulador-f2.md](docs/datos/simulador-f2.md). Granjas, eventos offline, los 5 defectos y la carga pico llegan con la EG-51.
+
 ## Reglas de negocio (EG-17, EG-18)
 
 RN-01 (reproducción válida: 30 s continuos), RN-02 (tope diario por pista y usuario) y RN-03 (señales de granja) son funciones puras en `src/sonoraplay/reglas/` (`validez.py` y `fraude.py`), sin base de datos ni Spark, para probarlas en aislamiento y reutilizarlas en la capa Silver. Los umbrales están en `src/sonoraplay/config.py` y se justifican en [ADR-0002](docs/adr/0002-zona-horaria-dia-mes.md) (día y mes en UTC) y [ADR-0005](docs/adr/0005-umbrales-granjas.md) (umbrales de granja).
@@ -216,7 +233,8 @@ docs/datos/                    Modelos de datos y decisiones
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
-src/sonoraplay/reglas/         RN-01, RN-02 y RN-03 como funciones puras
+src/sonoraplay/reglas/         RN-01, RN-02, RN-03 y reconstrucción de sesiones F2 (funciones puras)
+src/sonoraplay/simulador/      Simulador F2 mínimo (EG-19)
 src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
 src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
