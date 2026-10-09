@@ -19,6 +19,9 @@ dependencies = [
     # Topes: el Control de aplicaciones de Windows bloquea DLL de pandas 3.0.6 y pyarrow 25.0.1
     "pandas>=2.2,<3",
     "pyarrow>=17,<25",
+    "fastapi>=0.143.0",
+    "sqlmodel>=0.0.48",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [build-system]
@@ -27,6 +30,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "jupyter>=1.1.1",
     "pre-commit>=4.6.2",
     "pytest>=8",
