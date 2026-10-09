@@ -4,7 +4,19 @@ Plataforma de datos que decide qué reproducciones de música son válidas y, co
 
 Proyecto 08 del programa de ingeniería de datos de Riwi. Equipo: Joshua Quintero, María Clara Manjarrés y Andrea Zárate.
 
-> **Estado:** Sprint 1 (descubrimiento y diseño). Hoy el repositorio tiene la estructura base, el CI y la detección de secretos. El seed, las reglas de negocio y los demás componentes se agregan historia por historia.
+> **Estado:** Sprint 1 (descubrimiento y diseño) terminado. En `develop` están EG-10 a EG-18 con los ADR 0001–0005 y 0020:
+>
+> - EG-10: repositorio base, CI y detección de secretos.
+> - EG-11: ambigüedades de las reglas de negocio y supuestos.
+> - EG-12: catálogo F1 limpio y titulares.
+> - EG-13: seed F3 de suscripciones.
+> - EG-14: seed F4 de contratos.
+> - EG-15: esquema JSON de eventos F2.
+> - EG-16: arquitectura v1 y registro de ADR.
+> - EG-17: RN-01 y RN-02 (validez y tope diario).
+> - EG-18: RN-03 (detección de granjas).
+>
+> Falta fusionar `develop` en `main` con la etiqueta `v0.1.0-sprint1`.
 
 ---
 
@@ -100,12 +112,34 @@ Opciones: `--entrada`, `--salida`, `--titulares N` (por defecto 1.500) y `--semi
 
 Las pruebas (`tests/catalogo`) usan solo la muestra versionada `data/samples/f1_muestra.csv` (200 filas con los casos difíciles). Para regenerarla: `uv run python -m sonoraplay.catalogo.muestra`.
 
+## Seed F4 de contratos (EG-14)
+
+Carga en PostgreSQL los titulares de derechos y sus contratos: el % de cada pista con su vigencia (RN-07, con cambios a mitad de mes), una condición territorial opcional que se suma a la general (Q7) y las exclusiones por país (RN-08). Lee los titulares y las pistas del catálogo F1, así que **primero hay que correr el catálogo**:
+
+```bash
+uv run python -m sonoraplay.catalogo
+uv run --env-file .env python -m sonoraplay.seed.f4_contratos
+uv run --env-file .env python -m pytest tests/seed/test_seed_f4.py -v
+```
+
+Opciones: `--datos-f1` (carpeta con `titulares.parquet` y `catalogo_f1.parquet`; por defecto `data/processed`) y `--semilla N` (por defecto 42). Es idempotente: reejecutarlo no duplica filas.
+
+Modelo y reglas: [docs/datos/modelo-f4.md](docs/datos/modelo-f4.md).
+
 ## Eventos F2 (EG-15)
 
 Esquema JSON (draft 2020-12) de los eventos de reproducción: `schemas/f2_evento.schema.json`. Campos, defectos inyectados y cómo se reconstruye una reproducción a partir de los eventos: `docs/datos/eventos-f2.md`. Deduplicación por `event_id`: [ADR-0004](docs/adr/0004-esquema-eventos-f2.md).
 
 ```bash
 uv run pytest tests/schemas -v     # ejemplos válidos, inválidos y con defectos
+```
+
+## Reglas de negocio (EG-17, EG-18)
+
+RN-01 (reproducción válida: 30 s continuos), RN-02 (tope diario por pista y usuario) y RN-03 (señales de granja) son funciones puras en `src/sonoraplay/reglas/` (`validez.py` y `fraude.py`), sin base de datos ni Spark, para probarlas en aislamiento y reutilizarlas en la capa Silver. Los umbrales están en `src/sonoraplay/config.py` y se justifican en [ADR-0002](docs/adr/0002-zona-horaria-dia-mes.md) (día y mes en UTC) y [ADR-0005](docs/adr/0005-umbrales-granjas.md) (umbrales de granja).
+
+```bash
+uv run python -m pytest tests/reglas -v
 ```
 
 ## Integración continua
@@ -175,10 +209,15 @@ Un ítem se cierra en Jira solo si:
   workflows/ci.yml             CI: lint, pruebas y secretos
   pull_request_template.md     Checklist de la Definition of Done
 db/ddl/                        DDL de PostgreSQL (se aplica al crear el volumen)
+docs/analisis/                 Ambigüedades de las reglas de negocio y supuestos (EG-11)
+docs/arquitectura/             Arquitectura v1 y diagrama (EG-16)
+docs/adr/                      Registro de decisiones de arquitectura (ADR)
 docs/datos/                    Modelos de datos y decisiones
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
-src/sonoraplay/seed/           Generador del seed F3
+src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
+src/sonoraplay/reglas/         RN-01, RN-02 y RN-03 como funciones puras
+src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
 src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
 notebooks/                     Exploración de datos
@@ -191,9 +230,11 @@ pyproject.toml                 Proyecto, dependencias y configuración de Ruff y
 uv.lock                        Versiones exactas de las dependencias
 ```
 
-Se irán agregando con sus historias: `docs/arquitectura/` y `docs/adr/` y, desde el Sprint 2, los servicios, `spark/`, `dags/` e `infra/`.
+Se irán agregando con sus historias desde el Sprint 2: los servicios, `spark/`, `dags/` e `infra/terraform/`.
 
 ## Documentación
 
-- Arquitectura y decisiones (ADR): `docs/arquitectura/` y `docs/adr/` (EG-16).
+- Arquitectura: [docs/arquitectura/arquitectura-v1.md](docs/arquitectura/arquitectura-v1.md) (EG-16).
+- Decisiones de arquitectura: [registro de ADR](docs/adr/README.md). El entorno AWS está apagado por defecto y solo se prende en ventanas de prueba y la semana de la demo ([ADR-0020](docs/adr/0020-ventanas-encendido-aws.md)).
+- Supuestos de las reglas de negocio: [docs/analisis/ambiguedades-rn.md](docs/analisis/ambiguedades-rn.md) (EG-11).
 - Tablero del proyecto: Jira, proyecto **EG**.
