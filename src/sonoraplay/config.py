@@ -61,3 +61,28 @@ class ReglasValidezConfig:
     # RN-02: máximo de reproducciones válidas pagables por track, usuario y día.
     # EG-11 Q4 / ADR-0002: el "día" es la fecha UTC.
     max_reproducciones_dia: int = 10
+
+
+@dataclass(frozen=True)
+class ContratosConfig:
+    """EG-14 · parámetros reproducibles del seed F4."""
+
+    semilla: int = 42
+    fecha_inicio: date = date(2026, 9, 1)
+    fraccion_cambios: float = 0.15
+    fraccion_exclusiones: float = 0.10
+    fraccion_condiciones_territoriales: float = 0.10
+    porcentaje_min: int = 30
+    porcentaje_max: int = 70
+
+    def __post_init__(self) -> None:
+        for nombre in (
+            "fraccion_cambios",
+            "fraccion_exclusiones",
+            "fraccion_condiciones_territoriales",
+        ):
+            valor = getattr(self, nombre)
+            if not 0 <= valor <= 1:
+                raise ValueError(f"{nombre} debe estar entre 0 y 1")
+        if not 0 <= self.porcentaje_min <= self.porcentaje_max <= 100:
+            raise ValueError("los porcentajes contractuales deben estar entre 0 y 100")
