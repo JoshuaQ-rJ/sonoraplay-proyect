@@ -86,3 +86,30 @@ class ContratosConfig:
                 raise ValueError(f"{nombre} debe estar entre 0 y 1")
         if not 0 <= self.porcentaje_min <= self.porcentaje_max <= 100:
             raise ValueError("los porcentajes contractuales deben estar entre 0 y 100")
+
+
+@dataclass(frozen=True)
+class SimuladorConfig:
+    """EG-19 · simulador F2 mínimo para el esqueleto (EG-24). La EG-51 lo extiende.
+
+    Los escenarios obligatorios (RN-01 y RN-02) salen de `reglas`, así que si se recalibran los
+    umbrales los escenarios se mueven con ellos.
+    """
+
+    semilla: int = 42
+    eventos: int = 100
+    # Septiembre: el mes que liquidaría la EG-24. Nunca now(): rompe la reproducibilidad.
+    fecha_base: date = date(2026, 9, 15)
+    reglas: ReglasValidezConfig = ReglasValidezConfig()
+
+    @property
+    def eventos_minimos(self) -> int:
+        """Eventos de los escenarios A (2), B (2), C (4) y D (2 por cada sesión del tope + 1)."""
+        return 2 + 2 + 4 + 2 * (self.reglas.max_reproducciones_dia + 1)
+
+    def __post_init__(self) -> None:
+        if self.eventos < self.eventos_minimos:
+            raise ValueError(
+                f"eventos debe ser al menos {self.eventos_minimos} para los escenarios "
+                f"de RN-01 y RN-02 (recibido: {self.eventos})"
+            )
