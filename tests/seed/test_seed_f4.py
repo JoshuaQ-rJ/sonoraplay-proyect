@@ -6,16 +6,31 @@ import pandas as pd
 import pytest
 
 from sonoraplay.config import ContratosConfig
-from sonoraplay.seed.f4_contratos import FuentesF1, generar
+from sonoraplay.seed.f4_contratos import FuentesF1, ejecutar, generar
 
 
 @pytest.fixture
 def fuentes():
     titulares = pd.DataFrame(
         [
-            {"titular_id": "11111111-1111-4111-8111-111111111111", "nombre": "A", "tipo": "sello", "pais": "CO"},
-            {"titular_id": "22222222-2222-4222-8222-222222222222", "nombre": "B", "tipo": "distribuidora", "pais": "MX"},
-            {"titular_id": "33333333-3333-4333-8333-333333333333", "nombre": "C", "tipo": "sociedad_gestion", "pais": "CL"},
+            {
+                "titular_id": "11111111-1111-4111-8111-111111111111",
+                "nombre": "A",
+                "tipo": "sello",
+                "pais": "CO",
+            },
+            {
+                "titular_id": "22222222-2222-4222-8222-222222222222",
+                "nombre": "B",
+                "tipo": "distribuidora",
+                "pais": "MX",
+            },
+            {
+                "titular_id": "33333333-3333-4333-8333-333333333333",
+                "nombre": "C",
+                "tipo": "sociedad_gestion",
+                "pais": "CL",
+            },
         ]
     )
     catalogo = pd.DataFrame(
@@ -85,3 +100,15 @@ def test_sin_cambios_ni_exclusiones_tambien_es_valido(fuentes):
     assert len(contratos) == len(fuentes.titulares)
     assert not exclusiones
     assert all(c["territorio"] is None and c["valido_hasta"] is None for c in contratos)
+
+
+def test_seed_idempotente_en_postgresql(db_vacia, fuentes, tmp_path):
+    """Dos cargas idénticas no duplican filas en PostgreSQL."""
+    fuentes.titulares.to_parquet(tmp_path / "titulares.parquet", index=False)
+    fuentes.catalogo.to_parquet(tmp_path / "catalogo_f1.parquet", index=False)
+    primera = ejecutar(db_vacia, tmp_path, cfg())
+    segunda = ejecutar(db_vacia, tmp_path, cfg())
+    assert primera == segunda
+    assert primera["titulares_derechos"] == len(fuentes.titulares)
+    assert primera["contratos"] == 2 * len(fuentes.titulares)
+    assert primera["exclusiones_territoriales"] == primera["contratos"]
