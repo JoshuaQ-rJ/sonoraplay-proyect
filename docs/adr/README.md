@@ -13,7 +13,7 @@
 | [0003](0003-duplicados-f1.md) | Pistas duplicadas en F1: una fila por `track_id` con género principal y tabla puente de géneros | 03 | EG-12 | S1 | María Clara | F1, RN-03, Q9 | 🟢 |
 | [0004](0004-esquema-eventos-f2.md) | Esquema JSON de eventos F2 y deduplicación por `event_id` | 06 | EG-15 | S1 | Andrea | F2, RNF-04 | 🟢 |
 | [0005](0005-umbrales-granjas.md) | Umbrales de las 3 señales de granja y periodo de exclusión | 09 | EG-18 | S1 | María Clara | RN-03, CA-03, CA-10 | 🟢 |
-| 0006 | Autenticación de sellos y aislamiento entre titulares (token firmado, 403) | 12 | EG-21 | S2 | Andrea | RN-11, CA-08, RF-05 | ⚪ |
+| [0006](0006-autenticacion-aislamiento-sellos.md) | Autenticación de sellos con JWT HS256 y aislamiento entre titulares (403 antes de leer la base) | 12 | EG-21 | S2 | Andrea | RN-11, CA-08, RF-05 | 🟡 |
 | 0007 | Cierre de mes append-only, ajustes y re-liquidación | 14 | EG-23 | S2 | María Clara | RF-09, CA-07, RNF-02 | ⚪ |
 | 0008 | País que define la bolsa: facturación o reproducción | 14 | EG-23 | S2 | María Clara | RN-05, RN-10 | ⚪ |
 | 0009 | Región AWS (us-east-1 frente a sa-east-1) | 17 | EG-26 | S3 | Joshua | Tema 5, costos | ⚪ |
