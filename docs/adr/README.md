@@ -8,7 +8,7 @@
 
 | ADR | Decisión a tomar | Historia | Jira | Sprint | Responsable | Referencias | Estado |
 |---|---|---|---|---|---|---|---|
-| [0001](0001-arquitectura-base-aws.md) | Arquitectura base en AWS: servicios 24/7 al menor costo justificable | 07 | EG-16 | S1 | Joshua (los tres) | E-01 v1 | 🟢 |
+| [0001](0001-arquitectura-base-aws.md) | Arquitectura base en AWS al menor costo justificable (horario de encendido en ADR-0020) | 07 | EG-16 | S1 | Joshua (los tres) | E-01 v1 | 🟢 |
 | [0002](0002-zona-horaria-dia-mes.md) | Zona horaria que define el "día" y el "mes": **UTC** (aceptado 2026-10-02; se revisa si el docente responde distinto) | 02 | EG-11 | S1 | María Clara | RN-02, RN-04 | 🟢 |
 | [0003](0003-duplicados-f1.md) | Pistas duplicadas en F1: una fila por `track_id` con género principal y tabla puente de géneros | 03 | EG-12 | S1 | María Clara | F1, RN-03, Q9 | 🟡 |
 | [0004](0004-esquema-eventos-f2.md) | Esquema JSON de eventos F2 y deduplicación por `event_id` | 06 | EG-15 | S1 | Andrea | F2, RNF-04 | 🟡 |
@@ -25,12 +25,13 @@
 | 0015 | Airflow en EC2 con CeleryExecutor frente a MWAA | 25 | EG-34 | S4 | Joshua | Temas 11–12 | ⚪ |
 | 0016 | Manejo del skew en Spark (salting, broadcast join) | 30 | EG-39 | S5 | Joshua | RNF-01, E-13 | ⚪ |
 | 0017 | CI/CD con OIDC y gestión de secretos en SSM Parameter Store | 31 | EG-40 | S5 | Andrea | CT-02, E-09 | ⚪ |
-| 0018 | ECS frente a EKS, y EKS encendido solo en S5 y demo | 32 | EG-41 | S5 | Joshua | Tema 19 | ⚪ |
+| 0018 | ECS frente a EKS, y EKS encendido solo durante su prueba en S5 y la demo | 32 | EG-41 | S5 | Joshua | Tema 19 | ⚪ |
 | 0019 | Acceso de Power BI a RDS mediante túnel SSM | 35 | EG-44 | S6 | María Clara | RF-08, E-11 | ⚪ |
+| [0020](0020-ventanas-encendido-aws.md) | Entorno AWS apagado por defecto: ventanas de prueba en S3–S5 y encendido continuo solo en la última semana | 07 | EG-16 | S1 | María Clara (los tres) | ADR-0001, HU 17, 23, 38 | 🟡 |
 
 ## Resumen por historia
 
-- **Sprint 1:** HU 02, 03, 06, 07 y 09 (5 ADR).
+- **Sprint 1:** HU 02, 03, 06, 07 y 09 (6 ADR: 0001–0005 y 0020).
 - **Sprint 2:** HU 12 y 14 (3 ADR).
 - **Sprint 3:** HU 17, 18, 20 y 22 (6 ADR).
 - **Sprint 4:** HU 25 (1 ADR).

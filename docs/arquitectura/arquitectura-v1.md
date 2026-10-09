@@ -1,8 +1,8 @@
 # Arquitectura v1 · SonoraPlay Regalías
 
-> Entregable E-01 v1 (revisión 1.1, 5 de octubre de 2026) · Tarea 07 (EG-16) · Sprint 1 · Épica EP-9
+> Entregable E-01 v1 (revisión 1.2, 9 de octubre de 2026) · Tarea 07 (EG-16) · Sprint 1 · Épica EP-9
 >
-> Responsables: los tres integrantes (lidera Joshua) · Estado: propuesta para revisión del equipo
+> Responsables: los tres integrantes (lidera Joshua) · Estado: aceptada en ADR-0001; horario de encendido en [ADR-0020](../adr/0020-ventanas-encendido-aws.md) (propuesto)
 >
 > Decisión formal: [ADR-0001](../adr/0001-arquitectura-base-aws.md)
 
@@ -12,7 +12,7 @@ Fuente editable: `sonoraplay-arquitectura-v1.drawio`. Se abre en [diagrams.net](
 
 ## 1. Principios de diseño
 
-1. Servicios 24/7 y lotes bajo demanda. Todo lo que atiende peticiones o recibe eventos queda encendido: las APIs, RabbitMQ, Airflow y RDS. Spark no es un servicio. Airflow lanza cada job, el job corre y se apaga, así que está desplegado siempre pero solo se paga mientras procesa.
+1. Entorno apagado por defecto, servicios siempre activos mientras está prendido y lotes bajo demanda ([ADR-0020](../adr/0020-ventanas-encendido-aws.md)). El entorno se crea con Terraform solo en ventanas cortas de prueba (Sprints 3 a 5) y queda prendido de forma continua solo en la última semana, hasta la demo; después se destruye. Mientras está prendido, todo lo que atiende peticiones o recibe eventos queda encendido: las APIs, RabbitMQ, Airflow y RDS. Spark no es un servicio: Airflow lanza cada job, el job corre y se apaga, así que solo se paga mientras procesa. En la tabla de servicios, **24/7** significa "activo mientras el entorno está prendido" y **Persistente** significa "se conserva entre ventanas porque cuesta casi nada".
 2. Menor costo justificable. Para cada necesidad se elige el servicio más barato que cumple un tema obligatorio, una regla de negocio (RN), un requisito (RF/RNF) o un criterio de aceptación (CA).
 3. Solo el ALB es público. El cómputo y los datos van en subredes privadas. El equipo entra con SSM Session Manager, sin bastión y sin puertos abiertos hacia internet.
 4. Ningún secreto en el código. Los secretos viven en SSM Parameter Store y GitHub entra a AWS con OIDC. Una credencial expuesta cuesta −15 %.
@@ -27,7 +27,7 @@ Fuente editable: `sonoraplay-arquitectura-v1.drawio`. Se abre en [diagrams.net](
 | Salida | Instancia NAT | EC2 t4g.nano, sin verificación de origen/destino | 24/7 | Cerca de 90 % más barata que un NAT Gateway. Por ella salen F6/F7, las descargas de imágenes de ECR, los logs a CloudWatch y las sesiones de SSM | Tema 6 · ADR-0010 |
 | Salida a S3 | Endpoint Gateway de S3 | — | 24/7 | Gratis; el tráfico a S3 no pasa por la NAT | Tema 7 |
 | Entrada | Application Load Balancer | 1 ALB en las 2 subredes públicas | 24/7 | Health checks y punto único de entrada. El puerto 80 redirige al 443 | Tema 9 · HU 18 |
-| Certificado | AWS Certificate Manager (ACM) | 1 certificado en el ALB | Siempre | Los certificados públicos de ACM son gratis. Si el equipo no tiene dominio, se importa uno autofirmado y se documenta | CA-08 · HU 18 |
+| Certificado | AWS Certificate Manager (ACM) | 1 certificado en el ALB | Persistente | Los certificados públicos de ACM son gratis. Si el equipo no tiene dominio, se importa uno autofirmado y se documenta | CA-08 · HU 18 |
 | API de titulares | ECS Fargate On-Demand, ARM64 | 0,25 vCPU / 0,5 GB | 24/7 | Sin servidores que administrar; On-Demand porque atiende a los sellos | RF-05, RN-11, CA-08 · HU 12, 18 |
 | API de contratos F4 | ECS Fargate On-Demand, ARM64 | 0,25 vCPU / 0,5 GB | 24/7 | Spark la consulta para obtener el % vigente. No pasa por el ALB: se llama por DNS privado | F4, RN-07 · HU 11 |
 | Descubrimiento interno | AWS Cloud Map (ECS Service Discovery) | Espacio de nombres privado `sonoraplay.local` | 24/7 | Spark encuentra la API F4 sin exponerla a internet | F4 · HU 11 |
@@ -36,14 +36,14 @@ Fuente editable: `sonoraplay-arquitectura-v1.drawio`. Se abre en [diagrams.net](
 | Mensajería | RabbitMQ en EC2 | t4g.small | 24/7 | Más barato que Amazon MQ; también es el broker de Celery | Tema 10 · ADR-0013 |
 | Orquestación | Airflow (CeleryExecutor) en EC2 con docker compose | t4g.medium | 24/7 | MWAA cuesta cientos de USD al mes. Esta EC2 también sirve de host de salto para el túnel SSM hacia RDS | Temas 11–12 · ADR-0015 |
 | Procesamiento | Spark en tareas ECS Fargate Spot | 2 vCPU / 8 GB por job | Bajo demanda | Solo se paga mientras corre; Airflow reintenta si AWS interrumpe la tarea | Temas 13–16 · RNF-01 |
-| Data Lake | Amazon S3 Bronze / Silver / Gold | Parquet por año/mes/país, SSE-S3, acceso público bloqueado | Siempre | Barato y durable; trazabilidad por capas | Tema 7 · RNF-03 · ADR-0014 |
+| Data Lake | Amazon S3 Bronze / Silver / Gold | Parquet por año/mes/país, SSE-S3, acceso público bloqueado | Persistente | Barato y durable; trazabilidad por capas | Tema 7 · RNF-03 · ADR-0014 |
 | Base de datos | RDS PostgreSQL | db.t4g.micro, Single-AZ, 20 GB gp3, cifrada con KMS (clave administrada por AWS), backups de 7 días | 24/7 | F3, contratos, modelo dimensional y liquidaciones append-only. El cifrado se activa al crearla porque después no se puede | Tema 7 · RF-09 · HU 17 |
-| Imágenes | Amazon ECR | arm64 | Siempre | Destino del CI; una imagen por componente | Tema 8 |
-| Secretos | SSM Parameter Store (SecureString) | Nivel estándar | Siempre | Gratis; evita credenciales en el repositorio | CT-02 · ADR-0017 |
-| Observabilidad | CloudWatch Logs y alarmas | Retención de 7 días | Siempre | Logs de ECS y del ALB, alarmas de salud y recuperación automática de la NAT | HU 18 |
-| Auditoría | AWS CloudTrail | 1 trail de eventos de administración hacia un bucket S3 de auditoría | Siempre | Registra quién hizo qué en la cuenta. La primera copia de eventos de administración es gratis; solo se paga el almacenamiento en S3 | CT-02 · HU 31 |
-| Costos | AWS Budgets + SNS por correo | 1 presupuesto | Siempre | Avisa antes de pasarse del presupuesto | HU 23 · E-07 |
-| Kubernetes | Amazon EKS | 1 componente | Solo Sprint 5 y demo | El plano de control cuesta ~73 USD al mes | Tema 19 · ADR-0018 |
+| Imágenes | Amazon ECR | arm64 | Persistente | Destino del CI; una imagen por componente | Tema 8 |
+| Secretos | SSM Parameter Store (SecureString) | Nivel estándar | Persistente | Gratis; evita credenciales en el repositorio | CT-02 · ADR-0017 |
+| Observabilidad | CloudWatch Logs y alarmas | Retención de 7 días | Persistente | Logs de ECS y del ALB, alarmas de salud y recuperación automática de la NAT | HU 18 |
+| Auditoría | AWS CloudTrail | 1 trail de eventos de administración hacia un bucket S3 de auditoría | Persistente | Registra quién hizo qué en la cuenta. La primera copia de eventos de administración es gratis; solo se paga el almacenamiento en S3 | CT-02 · HU 31 |
+| Costos | AWS Budgets + SNS por correo | 1 presupuesto | Persistente | Avisa antes de pasarse del presupuesto | HU 23 · E-07 |
+| Kubernetes | Amazon EKS | 1 componente | Solo durante su prueba en el Sprint 5 y la demo | El plano de control cuesta 0,10 USD por hora (≈ 73 USD si quedara un mes) | Tema 19 · ADR-0018 |
 | Infraestructura como código | Terraform | — | — | `apply` y `destroy` reproducibles | HU 17, 38 · ADR-0011 |
 | CI/CD | GitHub Actions + OIDC | — | — | Lint, pruebas, build, push a ECR y deploy en ECS, sin llaves guardadas | Temas 17–18 · HU 31 |
 | Analítica | Power BI Desktop por túnel SSM a RDS | — | — | La base de datos nunca queda expuesta a internet | RF-08 · HU 35 · ADR-0019 |
@@ -105,7 +105,7 @@ La guía de diagramas de infraestructura de Hackmetrix lista diez elementos. Son
 | VPC de staging | Won't | El entorno local con Docker cumple ese papel |
 | Región alternativa (recuperación ante desastres) | Won't | Fuera del alcance de un proyecto académico de 6 semanas; los backups de RDS y la durabilidad de S3 cubren la pérdida de datos |
 
-## 7. Costo estimado con todo prendido
+## 7. Costo estimado
 
 Supuestos: región us-east-1, 730 horas al mes, precios de lista de referencia y volumen de desarrollo. Hay que confirmarlo en la HU 23 con la AWS Pricing Calculator.
 
@@ -123,9 +123,21 @@ Supuestos: región us-east-1, 730 horas al mes, precios de lista de referencia y
 | S3, ECR, CloudWatch, SNS, Budgets | 4–6 |
 | Cloud Map + zona DNS privada, CloudTrail (almacenamiento), ACM, KMS | 1 |
 | **Total sin EKS** | **≈ 115–120** |
-| EKS, solo en el Sprint 5 y la demo (~2 semanas) | +35 del plano de control, más los nodos |
+| EKS, solo durante su prueba en S5 y la demo (horas, no semanas) | 0,10 USD por hora más los nodos |
 
-Los rubros que más pesan son el ALB, la EC2 de Airflow y RDS. Bajarlos exigiría apagar servicios, y eso va contra el requisito de mantener todo prendido.
+Los rubros que más pesan son el ALB, la EC2 de Airflow y RDS.
+
+La tabla anterior es el costo de un mes con todo prendido. Con [ADR-0020](../adr/0020-ventanas-encendido-aws.md) el entorno solo se prende en ventanas, así que el costo del proyecto queda así:
+
+| Escenario | USD aprox. |
+|---|---|
+| Prendido las 6 semanas (descartado) | ≈ 165–170 sin EKS |
+| Ventanas de prueba en S3–S5 | ≈ 3–8 |
+| Última semana, prendido hasta la demo | ≈ 27–30 |
+| Recursos persistentes (estado de Terraform, ECR, SSM, Budgets, CloudTrail) | < 2 |
+| **Total con ADR-0020** | **≈ 30–40 sin EKS** |
+
+Se confirma en la HU 23.
 
 ## 8. Riesgos de esta versión
 
@@ -145,7 +157,15 @@ Los rubros que más pesan son el ALB, la EC2 de Airflow y RDS. Bajarlos exigirí
 - Las ambigüedades de las RN ya tienen supuestos en [ambiguedades-rn.md](../analisis/ambiguedades-rn.md) (HU 02). Si el docente responde distinto, pueden cambiar la zona horaria y el país que define la bolsa.
 - Revisar el [registro de ADR](../adr/README.md): cada decisión pendiente ya tiene su historia asignada.
 
-## 10. Cambios en la revisión 1.1
+## 10. Cambios en la revisión 1.2
+
+- El entorno queda apagado por defecto: ventanas de prueba en S3–S5 y encendido continuo solo en la última semana, hasta la demo ([ADR-0020](../adr/0020-ventanas-encendido-aws.md)). Los servicios no cambian.
+- El principio 1 define **24/7** ("activo mientras el entorno está prendido") y **Persistente** ("se conserva entre ventanas porque cuesta casi nada").
+- ACM, S3, ECR, SSM, CloudWatch, CloudTrail y Budgets pasan de "Siempre" a "Persistente".
+- EKS se prende solo durante su prueba en el Sprint 5 y la demo; su costo se expresa por hora.
+- La sección 7 pasa a "Costo estimado": se mantiene la tabla mensual y se agrega la tabla de escenarios (≈ 30–40 USD sin EKS para todo el proyecto).
+
+## 11. Cambios en la revisión 1.1
 
 - Se agregaron CloudTrail, ACM, Cloud Map, el Internet Gateway y la tabla de Security Groups.
 - RDS y S3 declaran el cifrado en reposo; S3 bloquea el acceso público.

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Aceptado |
+| Estado | Aceptado · el horario de encendido lo modifica [ADR-0020](0020-ventanas-encendido-aws.md) |
 | Fecha | 2026-09-30 |
 | Historia que lo origina | HU 07 · EG-16 |
 | Responsable | Joshua (lidera) · María Clara · Andrea |
@@ -11,7 +11,7 @@
 
 ## 1. Contexto
 
-SonoraPlay necesita una plataforma en AWS que reciba eventos sin perderlos, los procese con Spark, liquide el día 3 en menos de 1 hora y exponga una API a los sellos. El equipo acordó que **la plataforma queda encendida durante todo el proyecto**, no solo en la demo. El enunciado pide el **menor costo justificable** y cubrir los 20 temas del programa.
+SonoraPlay necesita una plataforma en AWS que reciba eventos sin perderlos, los procese con Spark, liquide el día 3 en menos de 1 hora y exponga una API a los sellos. Los servicios siempre activos lo están **mientras el entorno está prendido**; cuándo se prende lo decide [ADR-0020](0020-ventanas-encendido-aws.md). El enunciado pide el **menor costo justificable** y cubrir los 20 temas del programa.
 
 Como referencia se revisó una arquitectura web genérica de AWS (ELB + EC2 con Auto Scaling + RDS + Memcache + DynamoDB + SES + S3).
 
@@ -21,7 +21,7 @@ Como referencia se revisó una arquitectura web genérica de AWS (ELB + EC2 con 
 - **RNF-04:** cero eventos perdidos.
 - **RNF-01:** liquidación en menos de 1 hora.
 - **RN-11 / CA-08:** cada sello ve solo lo suyo.
-- **Costo:** los servicios 24/7 pagan todas las horas, así que el precio por hora pesa más que el precio por uso.
+- **Costo:** mientras el entorno está prendido, los servicios siempre activos pagan todas las horas, así que el precio por hora pesa más que el precio por uso.
 - **Penalizaciones:** credenciales expuestas (−15%) e infraestructura sin destruir (−10%).
 
 ## 3. Opciones consideradas
@@ -29,7 +29,7 @@ Como referencia se revisó una arquitectura web genérica de AWS (ELB + EC2 con 
 | Opción | A favor | En contra | USD/mes aprox. |
 |---|---|---|---|
 | A · Todo en una EC2 con docker compose | La más barata | No cubre los temas 7–9 ni la separación de capas; un punto único de falla | 30–40 |
-| B · Stack "administrado" (NAT Gateway, Amazon MQ, MWAA, Fargate On-Demand para todo) | Menos mantenimiento | MWAA y Amazon MQ multiplican el costo 24/7 | > 450 |
+| B · Stack "administrado" (NAT Gateway, Amazon MQ, MWAA, Fargate On-Demand para todo) | Menos mantenimiento | MWAA y Amazon MQ multiplican el costo por hora | > 450 |
 | C · **Híbrido:** Fargate para servicios, EC2 pequeñas para RabbitMQ y Airflow, instancia NAT, Spot donde se tolera interrupción, ARM64 | Cubre todos los temas a bajo costo | Más mantenimiento en las EC2; la instancia NAT es un punto único de falla | ≈ 115–120 |
 
 ## 4. Decisión
@@ -38,10 +38,11 @@ Como referencia se revisó una arquitectura web genérica de AWS (ELB + EC2 con 
 
 ## 5. Consecuencias
 
-- **Positivas:** plataforma disponible 24/7 por unos 115–120 USD al mes; todos los temas tienen un lugar natural; solo el ALB es público.
+- **Positivas:** con todo prendido cuesta ≈ 115–120 USD al mes (≈ 27 USD por semana); con [ADR-0020](0020-ventanas-encendido-aws.md), el proyecto cuesta ≈ 30–40 USD sin EKS. Todos los temas tienen un lugar natural y solo el ALB es público.
 - **Negativas:** el equipo mantiene dos EC2 (RabbitMQ y Airflow). RDS es Single-AZ.
-- **Riesgos:** las interrupciones de Spot se mitigan con ACK manual y reintentos de Airflow. Si la NAT cae, solo se afecta F6/F7, y hay alarma con recuperación automática. EKS se enciende solo en el Sprint 5 y la demo.
-- **Decisiones que se derivan:** ADR-0009 a ADR-0019 del [registro](README.md).
+- **Riesgos:** las interrupciones de Spot se mitigan con ACK manual y reintentos de Airflow. Si la NAT cae se cortan F6/F7, las descargas de ECR, los logs de CloudWatch y SSM; el tráfico a S3 sigue por el endpoint. Hay alarma con recuperación automática (arquitectura v1.1, sección 8). EKS se enciende solo en el Sprint 5 y la demo.
+- **Decisiones que se derivan:** ADR-0009 a ADR-0019 del [registro](README.md) y [ADR-0020](0020-ventanas-encendido-aws.md) (horario de encendido).
+- **Revisión 1.1 (2026-10-05):** sumó CloudTrail, ACM, Cloud Map, el Internet Gateway y los Security Groups, sin cambiar la opción, por ≈ 1 USD al mes.
 
 ## 6. Cómo sabremos que funciona
 
