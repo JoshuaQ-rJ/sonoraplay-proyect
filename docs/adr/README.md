@@ -27,7 +27,7 @@
 | 0017 | CI/CD con OIDC y gestión de secretos en SSM Parameter Store | 31 | EG-40 | S5 | Andrea | CT-02, E-09 | ⚪ |
 | 0018 | ECS frente a EKS, y EKS encendido solo durante su prueba en S5 y la demo | 32 | EG-41 | S5 | Joshua | Tema 19 | ⚪ |
 | 0019 | Acceso de Power BI a RDS mediante túnel SSM | 35 | EG-44 | S6 | María Clara | RF-08, E-11 | ⚪ |
-| [0020](0020-ventanas-encendido-aws.md) | Entorno AWS apagado por defecto: ventanas de prueba en S3–S5 y encendido continuo solo en la última semana | 07 | EG-16 | S1 | María Clara (los tres) | ADR-0001, HU 17, 23, 38 | 🟡 |
+| [0020](0020-ventanas-encendido-aws.md) | Entorno AWS apagado por defecto: ventanas de prueba en S3–S5 y encendido continuo solo en la última semana | 07 | EG-16 | S1 | María Clara (los tres) | ADR-0001, HU 17, 23, 38 | 🟢 |
 
 ## Resumen por historia
 

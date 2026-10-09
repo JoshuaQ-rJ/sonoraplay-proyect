@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-09 |
 | Historia que lo origina | HU 07 · EG-16 (corrección de la arquitectura v1) |
 | Responsable | María Clara (propone) · Joshua · Andrea |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | Andrea — aprobado en el PR #14 (fusionado el 2026-10-09) |
 | Referencias | [ADR-0001](0001-arquitectura-base-aws.md), [arquitectura v1.2](../arquitectura/arquitectura-v1.md), HU 17 (EG-26), HU 23 (EG-32), HU 32 (EG-41), HU 38, penalización de −10 % por no destruir la infraestructura |
 
 ## 1. Contexto

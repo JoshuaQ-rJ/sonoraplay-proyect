@@ -2,7 +2,7 @@
 
 > Entregable E-01 v1 (revisión 1.2, 9 de octubre de 2026) · Tarea 07 (EG-16) · Sprint 1 · Épica EP-9
 >
-> Responsables: los tres integrantes (lidera Joshua) · Estado: aceptada en ADR-0001; horario de encendido en [ADR-0020](../adr/0020-ventanas-encendido-aws.md) (propuesto)
+> Responsables: los tres integrantes (lidera Joshua) · Estado: aceptada en ADR-0001; horario de encendido en [ADR-0020](../adr/0020-ventanas-encendido-aws.md) (aceptado)
 >
 > Decisión formal: [ADR-0001](../adr/0001-arquitectura-base-aws.md)
 
