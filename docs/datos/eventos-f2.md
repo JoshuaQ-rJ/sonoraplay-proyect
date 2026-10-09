@@ -73,6 +73,8 @@ Son defectos de **negocio**, no de formato: todos sus eventos pasan el esquema y
 
 Este es el contrato que usan EG-17 (RN-01, RN-02) y EG-18 (RN-03). Una **sesión** (`session_id`) produce como máximo **una reproducción**.
 
+Los pasos 1, 2, 4 y 6 (sin artista) están implementados en `src/sonoraplay/reglas/sesiones.py` (`reconstruir`, EG-19); ver [simulador-f2.md](simulador-f2.md#de-eventos-a-reproducciones-reglassesionespy).
+
 ### Pasos
 
 1. **Deduplicar** por `event_id`; si se repite, se conserva el de menor `server_ts` (ADR-0004).
