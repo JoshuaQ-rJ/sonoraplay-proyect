@@ -40,7 +40,7 @@ Como referencia se revisó una arquitectura web genérica de AWS (ELB + EC2 con 
 
 - **Positivas:** con todo prendido cuesta ≈ 115–120 USD al mes (≈ 27 USD por semana); con [ADR-0020](0020-ventanas-encendido-aws.md), el proyecto cuesta ≈ 30–40 USD sin EKS. Todos los temas tienen un lugar natural y solo el ALB es público.
 - **Negativas:** el equipo mantiene dos EC2 (RabbitMQ y Airflow). RDS es Single-AZ.
-- **Riesgos:** las interrupciones de Spot se mitigan con ACK manual y reintentos de Airflow. Si la NAT cae se cortan F6/F7, las descargas de ECR, los logs de CloudWatch y SSM; el tráfico a S3 sigue por el endpoint. Hay alarma con recuperación automática (arquitectura v1.1, sección 8). EKS se enciende solo en el Sprint 5 y la demo.
+- **Riesgos:** las interrupciones de Spot se mitigan con ACK manual y reintentos de Airflow. Si la NAT cae se cortan F6/F7, las descargas de ECR, los logs de CloudWatch y SSM; el tráfico a S3 sigue por el endpoint. Hay alarma con recuperación automática (arquitectura v1.1, sección 8). EKS se enciende solo durante su prueba en el Sprint 5 y en la demo (ADR-0020).
 - **Decisiones que se derivan:** ADR-0009 a ADR-0019 del [registro](README.md) y [ADR-0020](0020-ventanas-encendido-aws.md) (horario de encendido).
 - **Revisión 1.1 (2026-10-05):** sumó CloudTrail, ACM, Cloud Map, el Internet Gateway y los Security Groups, sin cambiar la opción, por ≈ 1 USD al mes.
 
