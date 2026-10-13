@@ -133,6 +133,7 @@ class GeneradorF3:
         titular = self._usuario(i, rng, alta, lote)
 
         grupo_id = None
+        miembros: list[dict] = []
         if plan == "familiar":
             grupo_id = det_uuid(s, "grupo", i)
             lote.grupos_familiares.append(
@@ -153,6 +154,7 @@ class GeneradorF3:
             for j in range(i + 1, i + tamano):
                 union = min(alta + timedelta(days=rng.randint(0, 60)), self.cfg.fecha_referencia)
                 miembro = self._usuario(j, rng, union, lote)
+                miembros.append(miembro)
                 lote.miembros_familia.append(
                     {
                         "grupo_id": grupo_id,
@@ -163,6 +165,12 @@ class GeneradorF3:
                 )
 
         self._historial(i, rng, titular, plan, alta, grupo_id, lote)
+        # Sin suscripción propia, un miembro se queda sin plan cuando su familia se da de baja:
+        # su cuenta se cierra con la del titular (o al unirse, si se unió después de la baja).
+        # No consume el rng, así que el resto de los datos no cambia.
+        if titular["fecha_baja"] is not None:
+            for m in miembros:
+                m["fecha_baja"] = max(titular["fecha_baja"], m["fecha_alta"])
         return i + tamano
 
     def _usuario(self, j: int, rng: random.Random, alta: date, lote: Lote) -> dict:
