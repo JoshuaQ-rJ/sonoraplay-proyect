@@ -210,6 +210,8 @@ Escenarios, reglas de cada sesión y reconstrucción de reproducciones (`reglas/
 
 RN-01 (reproducción válida: 30 s continuos), RN-02 (tope diario por pista y usuario) y RN-03 (señales de granja) son funciones puras en `src/sonoraplay/reglas/` (`validez.py` y `fraude.py`), sin base de datos ni Spark, para probarlas en aislamiento y reutilizarlas en la capa Silver. Los umbrales están en `src/sonoraplay/config.py` y se justifican en [ADR-0002](docs/adr/0002-zona-horaria-dia-mes.md) (día y mes en UTC) y [ADR-0005](docs/adr/0005-umbrales-granjas.md) (umbrales de granja).
 
+La liquidación de regalías (RN-05 a RN-10, RNF-02, EG-23) está en `src/sonoraplay/reglas/liquidacion.py`: bolsa por país de facturación con dos componentes (suscripción y publicidad), % vigente por fecha, exclusiones territoriales devueltas como incidentes y reparto al centavo por mayor residuo. Devuelve las filas `FilaReporte` que lee la API de sellos. Decisiones en [ADR-0007](docs/adr/0007-cierre-mes-ajustes-reliquidacion.md) (cierre append-only, ajustes y redondeo) y [ADR-0008](docs/adr/0008-pais-bolsa-dos-componentes.md) (país de la bolsa y dos componentes).
+
 ```bash
 uv run python -m pytest tests/reglas -v
 ```
@@ -290,7 +292,7 @@ docker/                        Dockerfiles por componente (api-contratos, api-ti
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
-src/sonoraplay/reglas/         RN-01, RN-02, RN-03 y reconstrucción de sesiones F2 (funciones puras)
+src/sonoraplay/reglas/         RN-01, RN-02, RN-03, reconstrucción de sesiones F2 y liquidación (funciones puras)
 src/sonoraplay/simulador/      Simulador F2 mínimo (EG-19)
 src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
 src/sonoraplay/api_contratos/  API de contratos F4 (FastAPI + SQLModel)
