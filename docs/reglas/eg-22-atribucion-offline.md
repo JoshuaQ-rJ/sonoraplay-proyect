@@ -1,5 +1,7 @@
 # EG-22 · Offline play attribution (RN-04) / Atribución de reproducciones offline
 
+> **Versión vigente:** [docs/datos/atribucion-offline.md](../datos/atribucion-offline.md) (en español). Este documento describe la primera versión de la EG-22: no incluye la primera liquidación abierta para ajustes muy tardíos ni la corrección del reloj por sesión.
+
 ## English — Academic documentation
 
 ### Objective
