@@ -52,9 +52,7 @@ def test_sincronizacion_en_el_mismo_mes():
 
 
 def test_online_en_mes_siguiente_no_se_trata_como_offline():
-    resultado = atribuir_reproduccion(
-        ESCUCHA, datetime(2026, 10, 4, tzinfo=UTC), False, CFG
-    )
+    resultado = atribuir_reproduccion(ESCUCHA, datetime(2026, 10, 4, tzinfo=UTC), False, CFG)
     assert resultado.mes_liquidacion == date(2026, 9, 1)
     assert resultado.tipo == TipoAtribucion.NORMAL
 
@@ -63,7 +61,10 @@ def test_reloj_corregido_define_el_mes_real():
     original = datetime(2026, 9, 30, 23, 30, tzinfo=UTC)
     corregida = datetime(2026, 10, 1, 0, 30, tzinfo=UTC)
     resultado = atribuir_reproduccion(
-        original, datetime(2026, 10, 2, 12, tzinfo=UTC), True, CFG,
+        original,
+        datetime(2026, 10, 2, 12, tzinfo=UTC),
+        True,
+        CFG,
         reproducida_corregida_en=corregida,
     )
     assert resultado.mes_reproduccion == date(2026, 10, 1)
@@ -103,7 +104,8 @@ def test_diciembre_enero():
     resultado = atribuir_reproduccion(
         datetime(2026, 12, 28, tzinfo=UTC),
         datetime(2027, 1, 4, tzinfo=UTC),
-        True, CFG,
+        True,
+        CFG,
     )
     assert resultado == ResultadoAtribucion(
         date(2026, 12, 1), date(2027, 1, 1), TipoAtribucion.AJUSTE
