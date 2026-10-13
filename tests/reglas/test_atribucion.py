@@ -38,6 +38,7 @@ def test_sincroniza_antes_o_durante_el_minuto_limite(sync):
     "sync",
     [
         datetime(2026, 10, 3, tzinfo=UTC),
+        datetime(2026, 10, 3, 0, 1, tzinfo=UTC),
         datetime(2026, 10, 4, tzinfo=UTC),
     ],
 )
