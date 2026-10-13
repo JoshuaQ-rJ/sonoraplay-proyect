@@ -73,8 +73,12 @@ def atribuir_reproduccion(
 
     siguiente = _siguiente_mes(mes_real)
     corte = datetime(
-        siguiente.year, siguiente.month, cfg.dia_corte,
-        cfg.hora_corte, cfg.minuto_corte, tzinfo=UTC
+        siguiente.year,
+        siguiente.month,
+        cfg.dia_corte,
+        cfg.hora_corte,
+        cfg.minuto_corte,
+        tzinfo=UTC,
     ) + timedelta(minutes=1)
     if sincronizada < corte:
         return ResultadoAtribucion(mes_real, mes_real, TipoAtribucion.NORMAL)
