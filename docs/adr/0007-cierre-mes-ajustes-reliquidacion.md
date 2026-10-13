@@ -119,6 +119,6 @@ En `tests/reglas/test_liquidacion.py` (58 pruebas, puras):
 - Supuestos de negocio: [ambiguedades-rn.md](../analisis/ambiguedades-rn.md) (Q3, Q4).
 - [ADR-0002](0002-zona-horaria-dia-mes.md) (UTC), [ADR-0005](0005-umbrales-granjas.md) (exclusión y liberación), [ADR-0008](0008-pais-bolsa-dos-componentes.md) (país y componentes de la bolsa).
 - Contrato del reporte: [api-titulares.md](../servicios/api-titulares.md#contrato-para-la-eg-23--eg-37) y `db/ddl/003_reportes_regalias.sql`.
-- EG-22: [eg-22-atribucion-offline.md](../reglas/eg-22-atribucion-offline.md).
+- EG-22: [atribucion-offline.md](../datos/atribucion-offline.md).
 - Python `decimal` (modos de redondeo y `quantize`): https://docs.python.org/3/library/decimal.html
 - Método del mayor residuo (Hamilton): https://en.wikipedia.org/wiki/Largest_remainders_method
