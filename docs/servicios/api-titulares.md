@@ -214,8 +214,13 @@ La clave es `(liquidacion_id, titular_id, pais, componente, porcentaje_contractu
 
 ### Redondeo
 
-- `regalia_usd` se redondea **por fila** a 2 decimales con `ROUND_HALF_UP` (`redondear_usd`). Nunca se usa `float`.
-- RNF-02: la suma de `regalia_usd` de **todos** los titulares de un país y componente no puede superar la bolsa de ese componente en ese país ± 0,01 USD. El redondeo por fila puede empujar la suma por encima: la EG-23 debe comprobarlo y ajustar (por ejemplo, con el método del mayor residuo) antes de publicar. Esa regla de ajuste se decide en ADR-0007 / ADR-0008.
+- `regalia_usd` lleva 2 decimales y nunca pasa por `float`.
+- RNF-02: la suma de `regalia_usd` de **todos** los titulares de un país y componente no puede superar la bolsa de ese componente en ese país ± 0,01 USD. Redondear cada fila por separado con `ROUND_HALF_UP` no lo garantiza: con 3 filas de 33,335 da 3 × 33,34 = 100,02, por encima de una bolsa de 100,005.
+- Por eso la EG-23 aplica el **método del mayor residuo** por país y componente, en un solo sitio (`_repartir_centavos` en `src/sonoraplay/reglas/liquidacion.py`). Decisión en [ADR-0007](../adr/0007-cierre-mes-ajustes-reliquidacion.md):
+  1. cada fila se trunca al centavo;
+  2. los centavos que faltan para llegar a `redondear_usd(suma exacta)` se asignan, de a uno, a las filas con mayor residuo; los empates se rompen por titular;
+  3. la suma por componente es exactamente `redondear_usd(suma exacta)`, así que **nunca supera la bolsa** en más de 0,005 USD.
+- Consecuencia para quien recalcule: una fila puede diferir en **0,01 USD** de su `ROUND_HALF_UP` individual, pero siempre queda a menos de 0,01 de su valor exacto. Una fila al 0 % (territorio excluido, RN-08) nunca recibe un centavo.
 - La participación se guarda con 6 decimales; la regalía se calcula con la participación **sin redondear** y solo se redondea el resultado.
 
 ### Ejemplo (criterio 1 de la EG-23)
