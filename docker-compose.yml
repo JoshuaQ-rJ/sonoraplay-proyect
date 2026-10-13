@@ -1,3 +1,9 @@
+# EG-25 · Todo el stack con un comando: docker compose up -d --build
+# Orden: postgres (healthy) -> seed (termina con 0) -> simulador y APIs. Ver README.
+
+# Las credenciales salen de .env; el host es "postgres". Nunca se copian a una imagen.
+x-database-url: &database-url postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
+
 services:
   postgres:
     image: postgres:16.15-bookworm
@@ -17,19 +23,59 @@ services:
       timeout: 3s
       retries: 10
 
-  # EG-20 · API interna de contratos F4. Las credenciales salen de .env; el host es "postgres".
+  # EG-25 · Catálogo F1 -> seed F3 -> seed F4 (docker/seed.sh). Trabajo de una sola ejecución:
+  # su "health check" es el código de salida, que exigen los servicios que dependen de él.
+  # Por defecto usa la muestra versionada; para el CSV de Kaggle ver README (F1_ENTRADA).
+  seed:
+    build:
+      context: .
+      dockerfile: docker/seed.Dockerfile
+    container_name: sonoraplay-seed
+    environment:
+      DATABASE_URL: *database-url
+      F1_ENTRADA: ${F1_ENTRADA:-/datos/entrada/samples/f1_muestra.csv}
+      F1_TITULARES: ${F1_TITULARES:-50}
+      F3_MODO: ${F3_MODO:-dev}
+      SEED: ${SEED:-42}
+      TASA_DEFECTOS: ${TASA_DEFECTOS:-0.02}
+    volumes:
+      - ./data:/datos/entrada:ro
+      - datos-procesados:/datos/procesados
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # EG-25 · Simulador F2 (EG-19): 100 eventos en el volumen datos-procesados. Una sola ejecución.
+  simulador:
+    build:
+      context: .
+      dockerfile: docker/simulador.Dockerfile
+    container_name: sonoraplay-simulador
+    environment:
+      DATABASE_URL: *database-url
+    volumes:
+      - datos-procesados:/datos/procesados
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # EG-20 · API interna de contratos F4. Espera al seed para no responder sobre una base vacía.
   api-contratos:
     build:
       context: .
       dockerfile: docker/api-contratos.Dockerfile
     container_name: sonoraplay-api-contratos
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
+      DATABASE_URL: *database-url
     ports:
       - "${API_CONTRATOS_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
 
   # EG-21 · API pública de sellos. El secreto de firma sale de .env y nunca del repo (ADR-0006).
   # Si falta, solo este contenedor falla al arrancar, con un mensaje claro; postgres sigue en pie.
@@ -39,13 +85,16 @@ services:
       dockerfile: docker/api-titulares.Dockerfile
     container_name: sonoraplay-api-titulares
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
+      DATABASE_URL: *database-url
       API_TITULARES_JWT_SECRET: ${API_TITULARES_JWT_SECRET:-}
     ports:
       - "${API_TITULARES_PORT:-8001}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
+  datos-procesados:
