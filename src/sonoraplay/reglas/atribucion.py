@@ -1,10 +1,15 @@
 """RN-04 · atribución offline por mes UTC, sin E/S ni reloj del sistema (EG-22)."""
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
+from statistics import median
+from typing import Any
 
 from sonoraplay.config import AtribucionOfflineConfig
+
+Evento = Mapping[str, Any]
 
 
 class TipoAtribucion(StrEnum):
@@ -62,6 +67,33 @@ def corregir_reloj_online(
     if abs((servidor - dispositivo).total_seconds()) > cfg.tolerancia_reloj_segundos:
         return servidor
     return dispositivo
+
+
+def _iso_z(valor: datetime) -> str:
+    return valor.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def corregir_reloj_sesion(eventos: Iterable[Evento], cfg: AtribucionOfflineConfig) -> list[Evento]:
+    """Corrige el reloj de una sesión completa con un solo desfase (paso 3 de eventos-f2.md).
+
+    El desfase es la mediana de `server_ts − device_ts` de sus eventos online. Si supera la
+    tolerancia, se suma ese mismo desfase al `device_ts` de **todos** los eventos, así los tramos
+    conservan su duración. Una sesión con algún evento offline se devuelve sin cambios: su
+    `server_ts` es la sincronización tardía, no la hora de la escucha. Devuelve copias.
+    """
+    eventos = list(eventos)
+    if not eventos or any(e.get("is_offline", False) for e in eventos):
+        return eventos
+    desfase = median(
+        _utc(datetime.fromisoformat(e["server_ts"])) - _utc(datetime.fromisoformat(e["device_ts"]))
+        for e in eventos
+    )
+    if abs(desfase.total_seconds()) <= cfg.tolerancia_reloj_segundos:
+        return eventos
+    return [
+        {**e, "device_ts": _iso_z(datetime.fromisoformat(e["device_ts"]) + desfase)}
+        for e in eventos
+    ]
 
 
 def atribuir_reproduccion(
