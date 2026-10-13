@@ -1,6 +1,6 @@
 # API de contratos F4 (EG-20). Interna: en AWS corre en Fargate y Spark la llama por DNS privado.
 # Build desde la raíz del repo: docker build -f docker/api-contratos.Dockerfile .
-FROM python:3.12-slim
+FROM python:3.12.15-slim-bookworm
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.17 /uv /usr/local/bin/uv
 
