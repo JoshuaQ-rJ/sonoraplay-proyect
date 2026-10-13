@@ -20,6 +20,99 @@ Proyecto 08 del programa de ingeniería de datos de Riwi. Equipo: Joshua Quinter
 
 ---
 
+## Todo con Docker Compose (EG-25)
+
+La forma más rápida de tener todo funcionando: un solo comando levanta PostgreSQL, carga los datos de prueba, genera eventos y arranca las dos APIs. No hace falta instalar uv ni Python.
+
+**Requisitos:** Git y [Docker Desktop](https://docs.docker.com/desktop/) (o Docker Engine con Compose v2.20 o superior) encendido.
+
+**1. Clona y prepara `.env`**
+
+```bash
+git clone https://github.com/JoshuaQ-rJ/sonoraplay-proyect.git
+cd sonoraplay-proyect
+git checkout develop
+cp .env.example .env
+```
+
+En `.env`:
+
+- Cambia `POSTGRES_PASSWORD` (y la misma contraseña en `DATABASE_URL` y `TEST_DATABASE_URL`, que solo se usan fuera de Docker).
+- Cambia `API_TITULARES_JWT_SECRET` por un secreto aleatorio **antes** de levantar el stack. El valor de `.env.example` es falso a propósito y la API de sellos no arranca con él. Para generarlo solo con Docker:
+
+```bash
+docker run --rm python:3.12.15-slim-bookworm python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+**2. Levanta todo**
+
+```bash
+docker compose up -d --build
+docker compose ps -a
+```
+
+La primera vez tarda unos minutos porque construye las imágenes. Cuando termina, `postgres` y las dos APIs están `healthy`, y `seed` y `simulador` están `Exited (0)`.
+
+| Servicio | Qué hace | Arranca cuando | Puerto |
+|---|---|---|---|
+| `postgres` | PostgreSQL 16 con el DDL de `db/ddl/` | Primero | `PG_PORT` (5432) |
+| `seed` | Catálogo F1 → seed F3 (modo `dev`) → seed F4, y termina | `postgres` está *healthy* | — |
+| `simulador` | 100 eventos F2 con semilla 42, y termina | `seed` terminó con código 0 | — |
+| `api-contratos` | API de contratos F4 (EG-20) | `postgres` *healthy* y `seed` terminado con 0 | `API_CONTRATOS_PORT` (8000) |
+| `api-titulares` | API de sellos (EG-21) | `postgres` *healthy* y `seed` terminado con 0 | `API_TITULARES_PORT` (8001) |
+
+```bash
+curl http://localhost:8000/health     # {"status":"ok"}
+curl http://localhost:8001/health
+```
+
+Documentación interactiva: <http://localhost:8000/docs> y <http://localhost:8001/docs>.
+
+**Health checks.** `postgres` y las APIs tienen un health check propio. `seed` y `simulador` son trabajos de una sola ejecución, así que no tiene sentido un health check periódico: su salud es el código de salida. Compose la exige con `depends_on: condition: service_completed_successfully`, y si el seed falla, ni el simulador ni las APIs arrancan.
+
+**Idempotencia.** Puedes repetir `docker compose up -d` o `docker compose restart seed` sin que crezcan los conteos, porque los seeds usan IDs `uuid5` deterministas y `ON CONFLICT DO NOTHING`.
+
+**Datos generados.** El catálogo (`catalogo_f1.parquet`, `track_generos.parquet` y `titulares.parquet`) y los eventos (`eventos_f2.jsonl`) quedan en el volumen `datos-procesados`, no en tu carpeta `data/`. Para verlos:
+
+```bash
+docker compose run --rm --no-deps --entrypoint sh simulador -c "ls -la /datos/procesados; wc -l /datos/procesados/eventos_f2.jsonl"
+```
+
+**Catálogo completo de Kaggle.** Por defecto, el seed usa la muestra versionada `data/samples/f1_muestra.csv`: 200 filas y 170 artistas, por eso con 50 titulares. Para usar el CSV completo:
+
+1. Descárgalo como `data/raw/dataset.csv` (ver [Catálogo F1](#catálogo-f1-eg-12)). La carpeta `data/` se monta en el seed en solo lectura.
+2. Agrega a `.env`:
+
+   ```bash
+   F1_ENTRADA=/datos/entrada/raw/dataset.csv
+   F1_TITULARES=1500
+   ```
+
+3. Vuelve a empezar con la base vacía. Otro catálogo genera otros titulares, que se sumarían a los anteriores.
+
+   ```bash
+   docker compose down -v
+   docker compose up -d --build
+   ```
+
+`F3_MODO=completo` carga 900.000 usuarios en lugar de 10.000.
+
+**Logs**
+
+```bash
+docker compose logs seed simulador          # salida de los trabajos
+docker compose logs -f api-titulares        # seguir una API
+```
+
+**Apagar y limpiar**
+
+```bash
+docker compose down        # detiene y conserva los datos
+docker compose down -v     # borra también los volúmenes pgdata y datos-procesados
+```
+
+Las imágenes usan `python:3.12.15-slim-bookworm` y `postgres:16.15-bookworm`, con uv `0.12.17` fijado. Corren con un usuario sin privilegios (uid 10001) y no contienen `.env`: toda la configuración entra por variables de entorno.
+
 ## Requisitos
 
 | Herramienta | Versión | Para qué |
@@ -70,7 +163,7 @@ Seed reproducible e idempotente de la base F3 de suscripciones (PostgreSQL 16).
 ```bash
 cp .env.example .env            # y cambia POSTGRES_PASSWORD
 uv sync
-docker compose up -d --wait     # aplica db/ddl/ al crear el volumen
+docker compose up -d --wait postgres     # solo la base; aplica db/ddl/ al crear el volumen
 uv run --env-file .env python -m sonoraplay.seed --modo dev        # 10.000 usuarios
 uv run --env-file .env python -m sonoraplay.seed --modo completo   # 900.000 usuarios
 uv run --env-file .env python -m pytest tests/seed -v
@@ -194,7 +287,7 @@ uv run pytest tests/schemas -v     # ejemplos válidos, inválidos y con defecto
 Genera eventos de reproducción F2 en un archivo JSON Lines que lee el esqueleto (EG-24). Es determinista: la misma semilla produce el mismo archivo byte por byte. Cada archivo incluye los escenarios que ejercitan RN-01 (reproducciones de 29 s y de 30 s, y una pausa que reinicia el conteo) y RN-02 (11 reproducciones válidas de la misma pista por el mismo usuario el mismo día UTC). Necesita el catálogo F1, F3 y F4 cargados, en ese orden:
 
 ```bash
-docker compose up -d --wait
+docker compose up -d --wait postgres
 uv run python -m sonoraplay.catalogo
 uv run --env-file .env python -m sonoraplay.seed --modo dev
 uv run --env-file .env python -m sonoraplay.seed.f4_contratos
@@ -288,7 +381,7 @@ docs/arquitectura/             Arquitectura v1 y diagrama (EG-16)
 docs/adr/                      Registro de decisiones de arquitectura (ADR)
 docs/datos/                    Modelos de datos y decisiones
 docs/servicios/                Documentación de los servicios (API de contratos F4 y API de sellos)
-docker/                        Dockerfiles por componente (api-contratos, api-titulares)
+docker/                        Dockerfiles por componente (api-contratos, api-titulares, seed, simulador) y seed.sh
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
@@ -302,8 +395,9 @@ src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
 notebooks/                     Exploración de datos
 tests/                         Pruebas con pytest
-docker-compose.yml             PostgreSQL 16 local, la API de contratos F4 y la API de sellos
+docker-compose.yml             Stack completo: PostgreSQL 16, seed, simulador F2, API de contratos F4 y API de sellos (EG-25)
 .dockerignore                  Lo que nunca entra a una imagen (.env, .venv, datos)
+.gitattributes                 Fin de línea LF para los scripts de shell
 .env.example                   Variables de entorno sin valores reales
 .pre-commit-config.yaml        Revisiones antes de cada commit (Ruff y Gitleaks)
 LICENSE                        Licencia MIT
