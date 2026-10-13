@@ -26,6 +26,7 @@ erDiagram
 
 - Cada usuario tiene uno o más **períodos** de suscripción; solo el último puede estar abierto (`fecha_fin IS NULL`, índice único parcial `ux_suscripcion_activa`).
 - Un plan familiar es **una sola suscripción** del titular ligada al grupo → un solo pago por familia (RN-10). Los miembros tienen fila en `usuarios` y en `miembros_familia`, pero no suscripción propia.
+- Cuando la familia se da de baja (`cancelacion` o `no_renovacion`), los miembros también: su `fecha_baja` es la del titular, o su `fecha_alta` si se unieron después. Así, todo usuario sin `fecha_baja` tiene una suscripción abierta, propia o de su familia.
 - Un cambio de plan cierra el período anterior con `motivo_fin = 'cambio_plan'` (no es churn, RN-09). `cancelacion` y `no_renovacion` sí son churn.
 - `seed_defectos` registra cada defecto inyectado para medir después cuántos detecta la calidad de datos.
 
