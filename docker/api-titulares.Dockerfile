@@ -1,7 +1,7 @@
 # API de sellos (EG-21). Pública: en AWS corre en Fargate ARM64 detrás del ALB con HTTPS (ADR-0006).
 # Build desde la raíz del repo: docker build -f docker/api-titulares.Dockerfile .
 # Necesita API_TITULARES_JWT_SECRET en el entorno (en AWS, desde SSM); sin ella no arranca.
-FROM python:3.12-slim
+FROM python:3.12.15-slim-bookworm
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.17 /uv /usr/local/bin/uv
 
