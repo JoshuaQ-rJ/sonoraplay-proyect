@@ -231,3 +231,43 @@ def test_publicidad_float_rechazada(caso):
     eventos, fuentes, _ = caso
     with pytest.raises(TypeError, match="Decimal"):
         liquidar(eventos, fuentes, SEP, 20000.0)  # type: ignore[arg-type]
+
+
+def test_ajuste_offline_de_agosto_se_liquida_en_septiembre(caso):
+    """ADR-0007 §5: un ajuste de la EG-22 entra en la liquidación siguiente con el % de su fecha."""
+    eventos, fuentes, _ = caso
+    usuario = next(u for u, s in fuentes.suscripciones.items() if s[0].plan == "individual")
+    pista = next(iter(fuentes.titular_de_pista))
+    base = {
+        "schema_version": "1.0",
+        "user_id": usuario,
+        "device_id": "android-offline",
+        "track_id": pista,
+        "session_id": "ajuste-agosto",
+        "country_playback": "CO",
+        "is_offline": True,
+        "server_ts": "2026-09-10T12:00:00.000Z",  # sincronizada después del corte del 2-sep
+    }
+    ajuste = [
+        {
+            **base,
+            "event_id": "a1",
+            "event_type": "start",
+            "device_ts": "2026-08-28T20:00:00.000Z",
+            "position_ms": 0,
+        },
+        {
+            **base,
+            "event_id": "a2",
+            "event_type": "end",
+            "device_ts": "2026-08-28T20:00:40.000Z",
+            "position_ms": 40_000,
+        },
+    ]
+    resumen = liquidar([*eventos, *ajuste], fuentes, SEP, Decimal("20000"))
+    assert resumen.ajustes == 1
+    (rep,) = [r for r in resumen.liquidables if r.reproduccion_id == "ajuste-agosto"]
+    assert rep.inicio.date() == date(2026, 8, 28)
+    assert sum(f.reproducciones_validas for f in resumen.resultado.filas) == len(
+        resumen.liquidables
+    )
