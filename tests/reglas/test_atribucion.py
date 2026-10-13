@@ -113,12 +113,18 @@ def test_reloj_corregido_define_el_mes_real():
 def test_corregir_reloj_online_desfasado():
     dispositivo = datetime(2026, 9, 30, 21, tzinfo=UTC)
     servidor = datetime(2026, 10, 1, 0, tzinfo=UTC)
-    assert corregir_reloj_online(dispositivo, servidor, CFG) == servidor
+    assert corregir_reloj_online(dispositivo, servidor, CFG, es_offline=False) == servidor
 
 
 def test_no_corregir_reloj_dentro_de_tolerancia():
     servidor = ESCUCHA + timedelta(seconds=30)
-    assert corregir_reloj_online(ESCUCHA, servidor, CFG) == ESCUCHA
+    assert corregir_reloj_online(ESCUCHA, servidor, CFG, es_offline=False) == ESCUCHA
+
+
+def test_corregir_reloj_no_toca_eventos_offline():
+    """La sincronización tardía de un offline no es la hora de la escucha: no cambia de mes."""
+    sincronizada = datetime(2026, 10, 5, tzinfo=UTC)
+    assert corregir_reloj_online(ESCUCHA, sincronizada, CFG, es_offline=True) == ESCUCHA
 
 
 def test_utc_desde_otra_zona():

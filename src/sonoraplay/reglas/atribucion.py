@@ -45,14 +45,20 @@ def _corte(mes: date, cfg: AtribucionOfflineConfig) -> datetime:
 
 
 def corregir_reloj_online(
-    dispositivo: datetime, servidor: datetime, cfg: AtribucionOfflineConfig
+    dispositivo: datetime,
+    servidor: datetime,
+    cfg: AtribucionOfflineConfig,
+    *,
+    es_offline: bool,
 ) -> datetime:
     """Corrige eventos online si el desfase supera la tolerancia.
 
-    Para eventos offline, no inferir el desfase a partir de la sincronización tardía:
-    se debe proporcionar un timestamp ya corregido por una fuente confiable.
+    Un evento offline se devuelve sin cambios: su `server_ts` es la sincronización tardía, no
+    la hora de la escucha, y usarlo movería la reproducción de mes.
     """
     dispositivo, servidor = _utc(dispositivo), _utc(servidor)
+    if es_offline:
+        return dispositivo
     if abs((servidor - dispositivo).total_seconds()) > cfg.tolerancia_reloj_segundos:
         return servidor
     return dispositivo
