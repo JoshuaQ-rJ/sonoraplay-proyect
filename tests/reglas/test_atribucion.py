@@ -48,6 +48,44 @@ def test_tardia_es_ajuste_sin_reabrir_septiembre(sync):
     )
 
 
+@pytest.mark.parametrize(
+    ("sync", "mes_liquidacion"),
+    [
+        # Octubre (se paga el 3-nov) sigue abierta el 1-nov: no se espera a noviembre.
+        (datetime(2026, 11, 1, tzinfo=UTC), date(2026, 10, 1)),
+        (datetime(2026, 11, 2, 23, 59, 59, tzinfo=UTC), date(2026, 10, 1)),
+        # Pasado el corte de noviembre, octubre ya cerró.
+        (datetime(2026, 11, 3, tzinfo=UTC), date(2026, 11, 1)),
+    ],
+)
+def test_ajuste_va_a_la_primera_liquidacion_abierta(sync, mes_liquidacion):
+    assert atribuir(sync) == ResultadoAtribucion(
+        date(2026, 9, 1), mes_liquidacion, TipoAtribucion.AJUSTE
+    )
+
+
+def test_ajuste_muy_tardio_de_diciembre_a_enero():
+    resultado = atribuir_reproduccion(
+        datetime(2026, 12, 28, tzinfo=UTC),
+        datetime(2027, 2, 1, tzinfo=UTC),
+        True,
+        CFG,
+    )
+    assert resultado == ResultadoAtribucion(
+        date(2026, 12, 1), date(2027, 1, 1), TipoAtribucion.AJUSTE
+    )
+
+
+def test_ajuste_de_noviembre_sincronizado_a_inicios_de_enero_va_a_diciembre():
+    resultado = atribuir_reproduccion(
+        datetime(2026, 11, 20, tzinfo=UTC),
+        datetime(2027, 1, 2, tzinfo=UTC),
+        True,
+        CFG,
+    )
+    assert resultado.mes_liquidacion == date(2026, 12, 1)
+
+
 def test_sincronizacion_en_el_mismo_mes():
     assert atribuir(datetime(2026, 9, 29, tzinfo=UTC)).tipo == TipoAtribucion.NORMAL
 

@@ -33,6 +33,17 @@ def _siguiente_mes(mes: date) -> date:
     return date(mes.year + (mes.month == 12), (mes.month % 12) + 1, 1)
 
 
+def _mes_anterior(mes: date) -> date:
+    return date(mes.year - (mes.month == 1), ((mes.month - 2) % 12) + 1, 1)
+
+
+def _corte(mes: date, cfg: AtribucionOfflineConfig) -> datetime:
+    """Primer instante después del corte de sincronización de `mes` (incluye el minuto 23:59)."""
+    return datetime(
+        mes.year, mes.month, cfg.dia_corte, cfg.hora_corte, cfg.minuto_corte, tzinfo=UTC
+    ) + timedelta(minutes=1)
+
+
 def corregir_reloj_online(
     dispositivo: datetime, servidor: datetime, cfg: AtribucionOfflineConfig
 ) -> datetime:
@@ -57,8 +68,10 @@ def atribuir_reproduccion(
 ) -> ResultadoAtribucion:
     """Asigna el mes real o un ajuste sin reabrir liquidaciones cerradas.
 
-    El corte incluye todo el minuto 23:59 UTC del día 2. Una sincronización
-    posterior va al mes de liquidación de la sincronización (ajuste).
+    El corte incluye todo el minuto 23:59 UTC del día 2. Una sincronización posterior es un
+    ajuste y va a la primera liquidación todavía abierta: la del mes anterior a la
+    sincronización si esta llega antes del corte de su propio mes, o la del mes de la
+    sincronización si no. Nunca antes del mes siguiente al de la escucha.
     """
     original = _utc(reproducida_en)
     sincronizada = _utc(sincronizada_en)
@@ -72,15 +85,8 @@ def atribuir_reproduccion(
         return ResultadoAtribucion(mes_real, mes_real, TipoAtribucion.NORMAL)
 
     siguiente = _siguiente_mes(mes_real)
-    corte = datetime(
-        siguiente.year,
-        siguiente.month,
-        cfg.dia_corte,
-        cfg.hora_corte,
-        cfg.minuto_corte,
-        tzinfo=UTC,
-    ) + timedelta(minutes=1)
-    if sincronizada < corte:
+    if sincronizada < _corte(siguiente, cfg):
         return ResultadoAtribucion(mes_real, mes_real, TipoAtribucion.NORMAL)
 
-    return ResultadoAtribucion(mes_real, mes_sync, TipoAtribucion.AJUSTE)
+    abierta = _mes_anterior(mes_sync) if sincronizada < _corte(mes_sync, cfg) else mes_sync
+    return ResultadoAtribucion(mes_real, max(abierta, siguiente), TipoAtribucion.AJUSTE)
