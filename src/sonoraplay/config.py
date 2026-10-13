@@ -113,3 +113,21 @@ class SimuladorConfig:
                 f"eventos debe ser al menos {self.eventos_minimos} para los escenarios "
                 f"de RN-01 y RN-02 (recibido: {self.eventos})"
             )
+
+
+@dataclass(frozen=True)
+class AtribucionOfflineConfig:
+    """RN-04 · cierre de sincronización del mes anterior en UTC (ADR-0002)."""
+
+    dia_corte: int = 2
+    hora_corte: int = 23
+    minuto_corte: int = 59
+    tolerancia_reloj_segundos: int = 60
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.dia_corte <= 28:
+            raise ValueError("dia_corte debe estar entre 1 y 28")
+        if not 0 <= self.hora_corte <= 23 or not 0 <= self.minuto_corte <= 59:
+            raise ValueError("hora_corte y minuto_corte fuera de rango")
+        if self.tolerancia_reloj_segundos < 0:
+            raise ValueError("tolerancia_reloj_segundos no puede ser negativa")
