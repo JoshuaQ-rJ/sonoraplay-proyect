@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from typing import Literal
 
 VOLUMENES = {"dev": 10_000, "completo": 900_000}
@@ -61,6 +62,29 @@ class ReglasValidezConfig:
     # RN-02: máximo de reproducciones válidas pagables por track, usuario y día.
     # EG-11 Q4 / ADR-0002: el "día" es la fecha UTC.
     max_reproducciones_dia: int = 10
+
+
+@dataclass(frozen=True)
+class ReglasLiquidacionConfig:
+    """RN-05 / RN-06 · bolsa por país en dos componentes (EG-11 Q8, decidido en la planificación
+    del S2). Las justificaciones quedan en ADR-0007 y ADR-0008. Fracciones de 0 a 1 en Decimal:
+    el dinero nunca pasa por float.
+    """
+
+    # Componente de suscripción: fracción de la suscripción neta (Q5), repartida por
+    # reproducciones válidas de planes pagos.
+    fraccion_suscripcion: Decimal = Decimal("0.52")
+    # Componente de publicidad: fracción de los ingresos publicitarios, repartida por
+    # reproducciones válidas del plan gratuito.
+    fraccion_publicidad: Decimal = Decimal("0.45")
+
+    def __post_init__(self) -> None:
+        for nombre in ("fraccion_suscripcion", "fraccion_publicidad"):
+            valor = getattr(self, nombre)
+            if not isinstance(valor, Decimal):
+                raise TypeError(f"{nombre} debe ser Decimal (no float: se pierden centavos)")
+            if not 0 <= valor <= 1:
+                raise ValueError(f"{nombre} debe estar entre 0 y 1")
 
 
 @dataclass(frozen=True)
