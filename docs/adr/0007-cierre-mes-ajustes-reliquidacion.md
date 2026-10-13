@@ -13,7 +13,7 @@
 
 La liquidación es mensual: cada mes UTC (ADR-0002) se reparte la bolsa de cada país entre los titulares y el resultado se publica en la API de sellos (EG-21). Hay tres hechos que obligan a decidir qué pasa **después** de publicar un mes y cómo se redondea:
 
-1. **Datos que llegan tarde.** Una reproducción offline sincronizada después del corte (día 2 del mes siguiente, 23:59 UTC) ya no entra en su mes real: la EG-22 la marca como `TipoAtribucion.AJUSTE` y le asigna como mes de liquidación el de la sincronización (`reglas/atribucion.py`, RN-04).
+1. **Datos que llegan tarde.** Una reproducción offline sincronizada después del corte (día 2 del mes siguiente, 23:59 UTC) ya no entra en su mes real: la EG-22 la marca como `TipoAtribucion.AJUSTE` y le asigna como mes de liquidación la **primera liquidación todavía abierta** cuando llega la sincronización: la del mes anterior a la sincronización si esta llega antes o durante su corte del día 2, o la del mes de la sincronización si no (`reglas/atribucion.py`, RN-04; detalle en [atribucion-offline.md](../datos/atribucion-offline.md)).
 2. **Reproducciones liberadas tras una revisión de fraude.** Las cuentas sospechosas quedan `en_revision` todo el mes (ADR-0005, Q3). Si la revisión descarta el fraude, esas reproducciones deben pagarse, pero el mes en que ocurrieron ya está cerrado.
 3. **Errores de cálculo.** Si se descubre un error (un contrato mal cargado, un pago omitido), hay que poder volver a liquidar un mes.
 
@@ -119,6 +119,6 @@ En `tests/reglas/test_liquidacion.py` (58 pruebas, puras):
 - Supuestos de negocio: [ambiguedades-rn.md](../analisis/ambiguedades-rn.md) (Q3, Q4).
 - [ADR-0002](0002-zona-horaria-dia-mes.md) (UTC), [ADR-0005](0005-umbrales-granjas.md) (exclusión y liberación), [ADR-0008](0008-pais-bolsa-dos-componentes.md) (país y componentes de la bolsa).
 - Contrato del reporte: [api-titulares.md](../servicios/api-titulares.md#contrato-para-la-eg-23--eg-37) y `db/ddl/003_reportes_regalias.sql`.
-- EG-22: [eg-22-atribucion-offline.md](../reglas/eg-22-atribucion-offline.md).
+- EG-22: [atribucion-offline.md](../datos/atribucion-offline.md).
 - Python `decimal` (modos de redondeo y `quantize`): https://docs.python.org/3/library/decimal.html
 - Método del mayor residuo (Hamilton): https://en.wikipedia.org/wiki/Largest_remainders_method

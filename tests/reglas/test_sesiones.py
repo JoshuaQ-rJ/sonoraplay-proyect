@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from sonoraplay.reglas.sesiones import deduplicar, reconstruir, tramos
+from sonoraplay.reglas.validez import ReproduccionValidez
 
 EJEMPLOS = Path(__file__).resolve().parents[2] / "schemas" / "ejemplos"
 
@@ -119,3 +120,32 @@ def test_varias_sesiones_ordenadas_por_inicio():
     reps = reconstruir(a + b)
     assert [r.reproduccion_id for r in reps] == ["b", "a"]
     assert [r.ms_continuos_max for r in reps] == [10_000, 60_000]
+
+
+# --- Reloj corregido por sesión y campos para RN-04 (EG-22) ----------------------------------
+
+
+def test_reloj_desfasado_se_corrige_antes_de_reconstruir():
+    """3 h de desfase en un evento online: inicio corregido y el tramo intacto."""
+    eventos = _defecto("reloj_desfasado")
+    (rep,) = reconstruir(eventos)
+    assert rep.inicio == datetime(2026, 9, 17, 14, 0, 0, 250_000, tzinfo=UTC)
+    assert rep.ms_continuos_max == 210_760
+    assert rep.is_offline is False
+    assert rep.sincronizado == datetime(2026, 9, 17, 14, 3, 31, 10_000, tzinfo=UTC)
+
+
+def test_sesion_offline_conserva_su_device_ts_y_expone_la_sincronizacion():
+    eventos = [e for e in _validos() if e["event_type"] == "skip"]
+    eventos = [{**eventos[0], "event_type": "start", "event_id": "x", "position_ms": 0}, *eventos]
+    (rep,) = reconstruir(eventos)
+    assert rep.is_offline is True
+    assert rep.inicio == datetime.fromisoformat(eventos[0]["device_ts"])
+    assert rep.sincronizado == max(datetime.fromisoformat(e["server_ts"]) for e in eventos)
+
+
+def test_reproduccion_f2_sigue_siendo_reproduccion_validez():
+    """aplicar_tope_diario (EG-17) recibe lo que devuelve reconstruir sin adaptadores."""
+    (rep,) = reconstruir([e for e in _validos() if e["event_type"] != "skip"])
+    assert isinstance(rep, ReproduccionValidez)
+    assert rep.is_offline is False
