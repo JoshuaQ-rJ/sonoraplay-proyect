@@ -21,6 +21,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Capa 2: el paquete sonoraplay. uv_build necesita README y LICENSE.
 COPY README.md LICENSE ./
 COPY src ./src
+# El simulador valida cada evento contra el esquema F2 (EG-15), que busca en /app/schemas.
+COPY schemas/f2_evento.schema.json ./schemas/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
