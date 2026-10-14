@@ -130,12 +130,13 @@ Compose levanta `postgres`, corre `seed` y `simulador`, y cuando el simulador te
 
 ```text
 == Esqueleto EG-24 · liquidación publicada
-ID de liquidación: 1c897708-85b5-41ca-af25-49248cbcd546
+ID de liquidación: a9e9d2b3-7aff-4bbb-b458-cfa033f21267
 Período: 2026-09   País de facturación: CO
-Eventos F2: 100   Reproducciones: 35   Ajustes de meses anteriores: 0
-Descartadas: duracion_insuficiente=2, sin_pais_facturacion=1, sin_plan_vigente=11, tope_diario=1
+Eventos F2: 100   Reproducciones: 38   Ajustes de meses anteriores: 0
+Descartadas: duracion_insuficiente=4, tope_diario=1
+Pagables por país: AR=6, CL=4, CO=13, MX=2, PE=8
 ...
-Titular con mayor regalía: c2ab5c58-8954-57e2-af4e-496b43cf4247 (236.59 USD)
+Titular con mayor regalía: fb950a36-dd51-59f6-af5f-200916631894 (2340.00 USD)
 ```
 
 El ID de la liquidación cambia en cada corrida. Los datos son deterministas (semilla 42), así que el país, los conteos y las regalías se repiten. Si prefieres no dejar la terminal ocupada, usa `up --build -d` y luego `docker compose logs esqueleto`. Con `Ctrl+C` se detienen las APIs.
@@ -154,12 +155,12 @@ En PowerShell, la primera línea es `$TOKEN = docker compose exec -T api-titular
 Resultado esperado: un JSON con tus filas y totales. Cada uno trae `regalia_usd` (string con 2 decimales), `reproducciones_validas` y el mismo `liquidacion_id` del resumen (RNF-03):
 
 ```json
-{"titular_id": "c2ab5c58-…", "filas": [{"periodo": "2026-09", "pais": "CO", "componente": "suscripcion",
-  "reproducciones_validas": 1, "participacion": "0.200000", "porcentaje_contractual": "65.00",
-  "regalia_usd": "236.59", "liquidacion_id": "1c897708-…"}], "totales": [...]}
+{"titular_id": "fb950a36-…", "filas": [{"periodo": "2026-09", "pais": "CO", "componente": "publicidad",
+  "reproducciones_validas": 1, "participacion": "0.500000", "porcentaje_contractual": "52.00",
+  "regalia_usd": "2340.00", "liquidacion_id": "a9e9d2b3-…"}], "totales": [...]}
 ```
 
-Comprobación a mano: bolsa de suscripción de CO 1.819,96 USD × 1/5 reproducciones × 65 % = 236,59 USD.
+Comprobación a mano: bolsa de publicidad de CO 9.000 USD (45 % de 20.000) × 1/2 reproducciones del plan gratuito × 52 % = 2.340,00 USD.
 
 **Volver a liquidar.** Cada corrida crea una liquidación nueva y la API muestra la última; la anterior queda intacta (append-only, ADR-0007):
 

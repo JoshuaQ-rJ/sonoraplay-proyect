@@ -86,7 +86,7 @@ F3 pagos del mes ─────── suscripción neta (Q5) ─┐            
 - **Sin fraude (RN-03).** El simulador mínimo no genera granjas (llegan con la EG-51), así que el esqueleto no aplica `reglas/fraude.py`.
 - **Incidentes sin tabla.** Los incidentes de RN-08 se imprimen en el resumen, pero todavía no hay tabla donde guardarlos.
 - **País de facturación nulo.** Es un defecto que inyecta el seed F3 y que depura Silver (EG-35). El esqueleto no inventa un país: deja fuera esas reproducciones y esos pagos y los cuenta en el resumen (`sin_pais_facturacion`, «Pagos fuera de la bolsa»).
-- **Sin plan vigente.** Una reproducción de un usuario sin suscripción vigente, ni propia ni de su familia, queda fuera y se cuenta (`sin_plan_vigente`). El seed F3 deja activos a los miembros de una familia que se dio de baja, y el simulador los elige. Ver seguimientos.
+- **Sin plan vigente.** Una reproducción de un usuario sin suscripción vigente, ni propia ni de su familia, queda fuera y se cuenta (`sin_plan_vigente`). Desde que el seed F3 da de baja a los miembros junto con su familia, todo usuario activo tiene plan, y con los datos del simulador este conteo es 0.
 - **Un país por mes.** `liquidaciones` no tiene columna `pais`, y la API muestra la última liquidación publicada **del mes**. Si se liquidan dos países del mismo mes en corridas separadas, solo se ve el último. El esqueleto liquida un solo país; la EG-37 escribirá todos los países en una sola liquidación.
 
 ## Cómo correrlo
@@ -121,5 +121,4 @@ uv run --env-file .env python -m pytest tests/esqueleto -v
 - Tabla de incidentes (RN-08) y persistencia desde el esqueleto y la EG-37.
 - F5 real (EG-30): reemplazar `--publicidad-usd` por los ingresos publicitarios por país, convertidos con `convertir_a_usd`.
 - Fraude en el esqueleto (RN-03) cuando el simulador genere granjas (EG-51).
-- Miembros de familias dadas de baja: el seed F3 debería ponerles `fecha_baja`, o el simulador debería elegir solo usuarios con plan vigente (EG-13 / EG-19).
 - País en `liquidaciones`, o una liquidación con todos los países, antes de liquidar más de un país por mes (EG-37, ADR-0007).
