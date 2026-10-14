@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-13 |
 | Historia que lo origina | HU 14 · EG-23 |
 | Responsable | Andrea Zárate y María Clara Manjarrés |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | Joshua — aprobado el 2026-10-13, validado en la práctica por el esqueleto de la EG-24 (PR #25) |
 | Referencias | RF-09, CA-07, RNF-02, RN-04, RN-07, RN-08, EG-11 Q3, ADR-0002, ADR-0005, ADR-0006, ADR-0008 |
 
 ## 1. Contexto
@@ -94,7 +94,7 @@ La función no escribe nada: quien orquesta (EG-24, EG-37) decide dónde guardar
   - *Spark (EG-37) redondea por su cuenta y diverge.* Mitigación: la EG-37 llama a la misma función por grupo (país, componente) en lugar de reimplementarla, y compara sus totales con los de la EG-24 sobre la misma muestra.
   - *Una corrida se publica a medias.* Mitigación: `publicada_en` NULL hasta terminar (DDL 003); la API nunca muestra una liquidación sin publicar.
   - *Los incidentes se pierden porque nadie los guarda.* Mitigación: la EG-24 define dónde se persisten. Mientras tanto, `ResultadoLiquidacion.incidentes` es parte del resultado y no se puede ignorar sin descartarlo explícitamente.
-  - *Todavía no hay una prueba que liquide una reproducción de un mes anterior dentro de un mes posterior.* Mitigación: el % por fecha ya está cubierto por las pruebas del cambio de % a mitad de mes; el caso completo del ajuste (EG-22 + EG-23) se prueba en la EG-24.
+  - *Una reproducción de un mes anterior liquidada dentro de un mes posterior.* Cubierto: el % por fecha, por las pruebas del cambio de % a mitad de mes; el caso completo del ajuste (EG-22 + EG-23), por `tests/esqueleto/test_pipeline_puro.py::test_ajuste_offline_de_agosto_se_liquida_en_septiembre` (EG-24).
 
 ## 6. Cómo sabremos que funciona
 
@@ -112,6 +112,7 @@ En `tests/reglas/test_liquidacion.py` (58 pruebas, puras):
   - `test_territorio_excluido_paga_cero_y_devuelve_incidente`: fila al 0 %, la reproducción cuenta en el denominador y se devuelve el incidente con su contrato.
   - `test_sin_condicion_vigente_paga_cero_y_devuelve_incidente`.
 - **Append-only:** `tests/api_titulares/test_services.py` (EG-21) comprueba contra PostgreSQL que la API muestra solo la última liquidación publicada de cada mes.
+- **De punta a punta (EG-24):** `tests/esqueleto/test_calculo_a_mano.py` liquida 100 eventos simulados, compara cada fila con el cálculo a mano (± 0,01) y comprueba que una segunda corrida crea otra liquidación sin tocar la primera.
 
 ## 7. Fuentes
 

@@ -1,5 +1,6 @@
 # EG-25 · Todo el stack con un comando: docker compose up -d --build
 # Orden: postgres (healthy) -> seed (termina con 0) -> simulador y APIs. Ver README.
+# EG-24 · Con el esqueleto: docker compose --profile esqueleto up --build
 
 # Las credenciales salen de .env; el host es "postgres". Nunca se copian a una imagen.
 x-database-url: &database-url postgresql+psycopg://${POSTGRES_USER:-sonora}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-sonoraplay}
@@ -58,6 +59,27 @@ services:
       - datos-procesados:/datos/procesados
     depends_on:
       seed:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # EG-24 · Esqueleto de punta a punta: lee los eventos del simulador, aplica RN-01/RN-02/RN-04,
+  # liquida un país (EG-23) y publica en reporte_regalias (append-only, ADR-0007). Solo corre con
+  # el perfil "esqueleto". La publicidad es provisional hasta F5 (EG-30): ESQUELETO_PUBLICIDAD_USD.
+  esqueleto:
+    build:
+      context: .
+      dockerfile: docker/esqueleto.Dockerfile
+    container_name: sonoraplay-esqueleto
+    profiles: ["esqueleto"]
+    environment:
+      DATABASE_URL: *database-url
+    command: ["--publicidad-usd", "${ESQUELETO_PUBLICIDAD_USD:-20000}"]
+    volumes:
+      - datos-procesados:/datos/procesados:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      simulador:
         condition: service_completed_successfully
     restart: "no"
 
