@@ -60,6 +60,7 @@ La primera vez tarda unos minutos porque construye las imágenes. Cuando termina
 | `simulador` | 100 eventos F2 con semilla 42, y termina | `seed` terminó con código 0 | — |
 | `api-contratos` | API de contratos F4 (EG-20) | `postgres` *healthy* y `seed` terminado con 0 | `API_CONTRATOS_PORT` (8000) |
 | `api-titulares` | API de sellos (EG-21) | `postgres` *healthy* y `seed` terminado con 0 | `API_TITULARES_PORT` (8001) |
+| `esqueleto` | Solo con `--profile esqueleto`: liquida un país con los eventos y lo publica (EG-24), y termina | `postgres` *healthy* y `simulador` terminado con 0 | — |
 
 ```bash
 curl http://localhost:8000/health     # {"status":"ok"}
@@ -112,6 +113,70 @@ docker compose down -v     # borra también los volúmenes pgdata y datos-proces
 ```
 
 Las imágenes usan `python:3.12.15-slim-bookworm` y `postgres:16.15-bookworm`, con uv `0.12.17` fijado. Corren con un usuario sin privilegios (uid 10001) y no contienen `.env`: toda la configuración entra por variables de entorno.
+
+## Esqueleto de punta a punta (EG-24)
+
+Un solo comando hace que los 100 eventos del simulador pasen por las reglas de validez (RN-01, RN-02), la atribución al mes (RN-04) y la liquidación de un país (RN-05 a RN-10), y deja el resultado en `reporte_regalias`. Después, un sello consulta su regalía en la API con su token. Detalle del flujo, reglas y valores provisionales: [docs/esqueleto.md](docs/esqueleto.md).
+
+**1. Prepara `.env`** como en el paso 1 de [Todo con Docker Compose](#todo-con-docker-compose-eg-25): copia `.env.example`, cambia `POSTGRES_PASSWORD` y pon un `API_TITULARES_JWT_SECRET` aleatorio.
+
+**2. Corre el esqueleto (un solo comando)**
+
+```bash
+docker compose --profile esqueleto up --build
+```
+
+Compose levanta `postgres`, corre `seed` y `simulador`, y cuando el simulador termina corre `esqueleto`. Las APIs quedan en pie. Busca en el log el bloque de `sonoraplay-esqueleto`, que termina con `exited with code 0`:
+
+```text
+== Esqueleto EG-24 · liquidación publicada
+ID de liquidación: a9e9d2b3-7aff-4bbb-b458-cfa033f21267
+Período: 2026-09   País de facturación: CO
+Eventos F2: 100   Reproducciones: 38   Ajustes de meses anteriores: 0
+Descartadas: duracion_insuficiente=4, tope_diario=1
+Pagables por país: AR=6, CL=4, CO=13, MX=2, PE=8
+...
+Titular con mayor regalía: fb950a36-dd51-59f6-af5f-200916631894 (2340.00 USD)
+```
+
+El ID de la liquidación cambia en cada corrida. Los datos son deterministas (semilla 42), así que el país, los conteos y las regalías se repiten. Si prefieres no dejar la terminal ocupada, usa `up --build -d` y luego `docker compose logs esqueleto`. Con `Ctrl+C` se detienen las APIs.
+
+**3. Consulta la API como el sello**
+
+Copia el UUID del titular con mayor regalía que imprimió el resumen y, en otra terminal:
+
+```bash
+TOKEN=$(docker compose exec -T api-titulares python -m sonoraplay.api_titulares.tokens --titular <uuid>)
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:8001/me/reportes?periodo=2026-09"
+```
+
+En PowerShell, la primera línea es `$TOKEN = docker compose exec -T api-titulares python -m sonoraplay.api_titulares.tokens --titular <uuid>`, y luego `curl.exe -H "Authorization: Bearer $TOKEN" "http://localhost:8001/me/reportes?periodo=2026-09"`.
+
+Resultado esperado: un JSON con tus filas y totales. Cada uno trae `regalia_usd` (string con 2 decimales), `reproducciones_validas` y el mismo `liquidacion_id` del resumen (RNF-03):
+
+```json
+{"titular_id": "fb950a36-…", "filas": [{"periodo": "2026-09", "pais": "CO", "componente": "publicidad",
+  "reproducciones_validas": 1, "participacion": "0.500000", "porcentaje_contractual": "52.00",
+  "regalia_usd": "2340.00", "liquidacion_id": "a9e9d2b3-…"}], "totales": [...]}
+```
+
+Comprobación a mano: bolsa de publicidad de CO 9.000 USD (45 % de 20.000) × 1/2 reproducciones del plan gratuito × 52 % = 2.340,00 USD.
+
+**Volver a liquidar.** Cada corrida crea una liquidación nueva y la API muestra la última; la anterior queda intacta (append-only, ADR-0007):
+
+```bash
+docker compose --profile esqueleto run --rm esqueleto --pais CO --publicidad-usd 15000
+```
+
+**Valores provisionales.** La publicidad todavía no tiene fuente (F5 llega con la EG-30). Se usan **20.000 USD** de ingresos publicitarios por país, que se cambian con `--publicidad-usd` o con `ESQUELETO_PUBLICIDAD_USD` en `.env`. RN-03 (fraude) no se aplica porque el simulador mínimo no genera granjas.
+
+**Sin Docker.** Con el catálogo, F3, F4 y el simulador ya corridos (ver [Simulador F2 mínimo](#simulador-f2-mínimo-eg-19)):
+
+```bash
+uv run --env-file .env python -m sonoraplay.esqueleto
+uv run --env-file .env python -m sonoraplay.api_titulares.tokens --titular <uuid>
+uv run --env-file .env python -m pytest tests/esqueleto -v
+```
 
 ## Requisitos
 
@@ -395,12 +460,13 @@ docs/adr/                      Registro de decisiones de arquitectura (ADR)
 docs/datos/                    Modelos de datos y decisiones
 docs/servicios/                Documentación de los servicios (API de contratos F4 y API de sellos)
 infra/terraform/               Terraform de AWS: VPC, NAT, S3 por capas, RDS e IAM (EG-26)
-docker/                        Dockerfiles por componente (api-contratos, api-titulares, seed, simulador) y seed.sh
+docker/                        Dockerfiles por componente (api-contratos, api-titulares, seed, simulador, esqueleto) y seed.sh
 schemas/                       Esquema JSON de eventos F2 y ejemplos
 src/sonoraplay/                Código del paquete (src layout)
 src/sonoraplay/config.py       Parámetros de negocio y umbrales centralizados
 src/sonoraplay/reglas/         RN-01, RN-02, RN-03, reconstrucción de sesiones F2 y liquidación (funciones puras)
 src/sonoraplay/simulador/      Simulador F2 mínimo (EG-19)
+src/sonoraplay/esqueleto/      Esqueleto de punta a punta: eventos → reglas → liquidación → reporte (EG-24)
 src/sonoraplay/seed/           Seeds F3 (suscripciones) y F4 (contratos)
 src/sonoraplay/api_contratos/  API de contratos F4 (FastAPI + SQLModel)
 src/sonoraplay/api_titulares/  API pública de sellos con JWT y aislamiento por titular (EG-21)
@@ -409,7 +475,7 @@ src/sonoraplay/catalogo/       Limpieza del catálogo F1 y titulares
 data/samples/                  Muestras pequeñas versionadas para pruebas
 notebooks/                     Exploración de datos
 tests/                         Pruebas con pytest
-docker-compose.yml             Stack completo: PostgreSQL 16, seed, simulador F2, API de contratos F4 y API de sellos (EG-25)
+docker-compose.yml             Stack completo: PostgreSQL 16, seed, simulador F2, API de contratos F4, API de sellos (EG-25) y esqueleto con perfil (EG-24)
 .dockerignore                  Lo que nunca entra a una imagen (.env, .venv, datos)
 .gitattributes                 Fin de línea LF para los scripts de shell
 .env.example                   Variables de entorno sin valores reales
@@ -425,5 +491,6 @@ Se irán agregando con sus historias desde el Sprint 2: los servicios, `spark/`,
 
 - Arquitectura: [docs/arquitectura/arquitectura-v1.md](docs/arquitectura/arquitectura-v1.md) (EG-16).
 - Decisiones de arquitectura: [registro de ADR](docs/adr/README.md). El entorno AWS está apagado por defecto y solo se prende en ventanas de prueba y la semana de la demo ([ADR-0020](docs/adr/0020-ventanas-encendido-aws.md)).
+- Esqueleto de punta a punta: [docs/esqueleto.md](docs/esqueleto.md) (EG-24).
 - Supuestos de las reglas de negocio: [docs/analisis/ambiguedades-rn.md](docs/analisis/ambiguedades-rn.md) (EG-11).
 - Tablero del proyecto: Jira, proyecto **EG**.

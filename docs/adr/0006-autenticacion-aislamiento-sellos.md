@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-09 |
 | Historia que lo origina | HU 12 · EG-21 |
 | Responsable | Andrea |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | Joshua — aprobado el 2026-10-13, validado en la práctica por el esqueleto de la EG-24 (PR #25) |
 | Referencias | RN-11, CA-08, RF-05, RNF-02, CT-02, ADR-0001, ADR-0007, ADR-0017 |
 
 ## 1. Contexto
