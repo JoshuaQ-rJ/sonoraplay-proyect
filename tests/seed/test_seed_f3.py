@@ -138,6 +138,51 @@ def test_reglas_de_dominio(db_vacia):
     )
 
 
+def test_miembros_se_dan_de_baja_con_su_familia(db_vacia):
+    """Un miembro no tiene suscripción propia: sin la de su familia, su cuenta no sigue activa.
+
+    Si quedara activa, el simulador F2 la elegiría y el esqueleto (EG-24) no encontraría su plan.
+    """
+    ejecutar(db_vacia, cfg())
+    miembros_de_familias_de_baja = valor(
+        db_vacia,
+        "SELECT count(*) FROM miembros_familia m "
+        "JOIN grupos_familiares g USING (grupo_id) "
+        "JOIN usuarios t ON t.usuario_id = g.titular_id "
+        "WHERE m.rol = 'miembro' AND t.fecha_baja IS NOT NULL",
+    )
+    assert miembros_de_familias_de_baja > 0
+    assert (
+        valor(
+            db_vacia,
+            "SELECT count(*) FROM miembros_familia m "
+            "JOIN grupos_familiares g USING (grupo_id) "
+            "JOIN usuarios t ON t.usuario_id = g.titular_id "
+            "JOIN usuarios u ON u.usuario_id = m.usuario_id "
+            "WHERE m.rol = 'miembro' AND t.fecha_baja IS NOT NULL "
+            "AND (u.fecha_baja IS NULL OR u.fecha_baja < t.fecha_baja)",
+        )
+        == 0
+    )
+
+
+def test_todo_usuario_activo_tiene_un_plan_abierto(db_vacia):
+    """Sin baja = con suscripción abierta, propia o (si es miembro) la de su familia."""
+    ejecutar(db_vacia, cfg())
+    assert (
+        valor(
+            db_vacia,
+            "SELECT count(*) FROM usuarios u "
+            "LEFT JOIN miembros_familia m ON m.usuario_id = u.usuario_id AND m.rol = 'miembro' "
+            "LEFT JOIN grupos_familiares g ON g.grupo_id = m.grupo_id "
+            "WHERE u.fecha_baja IS NULL AND NOT EXISTS ("
+            "  SELECT 1 FROM suscripciones s "
+            "  WHERE s.usuario_id = coalesce(g.titular_id, u.usuario_id) AND s.fecha_fin IS NULL)",
+        )
+        == 0
+    )
+
+
 NUEVO_USUARIO = text("""INSERT INTO usuarios
                         (usuario_id, nombre, email, pais_facturacion, fecha_alta)
                         VALUES (gen_random_uuid(), 'Prueba', 'prueba@example.com', 'CO', now())
