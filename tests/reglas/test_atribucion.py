@@ -53,6 +53,7 @@ def test_tardia_es_ajuste_sin_reabrir_septiembre(sync):
     [
         # Octubre (se paga el 3-nov) sigue abierta el 1-nov: no se espera a noviembre.
         (datetime(2026, 11, 1, tzinfo=UTC), date(2026, 10, 1)),
+        (datetime(2026, 11, 2, 23, 59, tzinfo=UTC), date(2026, 10, 1)),
         (datetime(2026, 11, 2, 23, 59, 59, tzinfo=UTC), date(2026, 10, 1)),
         # Pasado el corte de noviembre, octubre ya cerró.
         (datetime(2026, 11, 3, tzinfo=UTC), date(2026, 11, 1)),
