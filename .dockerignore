@@ -1,0 +1,14 @@
+# Nunca dentro de una imagen: secretos y entornos locales.
+.env
+.env.*
+!.env.example
+.venv/
+.git/
+
+# Datos y artefactos locales
+data/
+notebooks/
+.coverage
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/

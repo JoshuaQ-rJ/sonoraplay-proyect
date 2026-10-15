@@ -64,7 +64,7 @@ Son defectos de **negocio**, no de formato: todos sus eventos pasan el esquema y
 | Defecto | Archivo | Cómo se ve en los eventos | Cómo se detecta y trata |
 |---|---|---|---|
 | Evento sin fin | `evento_sin_fin.json` | `start` → `pause` → `resume` y nunca llega `end` ni `skip` | Al cerrar la sesión el último tramo queda abierto: cuenta **0 ms** (no se puede saber cuánto duró) y la reproducción se marca `sin_fin`. Los tramos cerrados sí cuentan. |
-| Reloj del dispositivo desfasado | `reloj_desfasado.json` | Evento online (`is_offline=false`) con `device_ts` 3 h antes que `server_ts` | En un evento online `server_ts − device_ts` debería ser de milisegundos. Si supera la tolerancia se corrige `device_ts` con ese desfase (RN-04, ADR-0002 regla 2); el umbral y la corrección se fijan en EG-22. |
+| Reloj del dispositivo desfasado | `reloj_desfasado.json` | Evento online (`is_offline=false`) con `device_ts` 3 h antes que `server_ts` | En un evento online `server_ts − device_ts` debería ser de milisegundos. Si la mediana de la sesión supera la tolerancia (60 s) se suma ese desfase a todos sus `device_ts` (paso 3, EG-22; ADR-0002 regla 2): el `start` queda a las 14:00:00.250Z y el tramo sigue midiendo 210 760 ms. |
 | Track desconocido | `track_desconocido.json` | `track_id` con formato correcto que no está en F1 | El cruce con el catálogo no encuentra artista ni titular: la reproducción va a cuarentena y no entra en la bolsa ni en RN-03 señal 2. |
 | Duplicado por reintento | `duplicado_por_reintento.json` | Dos eventos con el **mismo `event_id`** y el mismo contenido; solo cambia `server_ts` | Se deduplica por `event_id` y se conserva el de menor `server_ts` (ADR-0004). Comparar el evento completo **no** sirve, porque `server_ts` difiere. |
 | País de facturación ≠ país de reproducción | `pais_facturacion_distinto.json` | `country_playback = "MX"` para una cuenta que factura en `"CO"` en F3 | Se ve al cruzar `user_id` con F3. No es un error: la reproducción cuenta en la bolsa del país de facturación (EG-11 Q6, ADR-0008) y `country_playback` solo se usa para RN-08 y analítica. |
@@ -73,11 +73,16 @@ Son defectos de **negocio**, no de formato: todos sus eventos pasan el esquema y
 
 Este es el contrato que usan EG-17 (RN-01, RN-02) y EG-18 (RN-03). Una **sesión** (`session_id`) produce como máximo **una reproducción**.
 
+Los pasos 1 a 4 y 6 (sin artista) están implementados en `src/sonoraplay/reglas/sesiones.py` (`reconstruir`, EG-19; el paso 3 con la corrección del reloj de la EG-22); ver [simulador-f2.md](simulador-f2.md#de-eventos-a-reproducciones-reglassesionespy). La atribución al mes (RN-04) está en [atribucion-offline.md](atribucion-offline.md).
+
 ### Pasos
 
 1. **Deduplicar** por `event_id`; si se repite, se conserva el de menor `server_ts` (ADR-0004).
 2. **Agrupar** por `session_id`. Todos sus eventos deben tener el mismo `user_id`, `device_id` y `track_id`; si no, la sesión va a cuarentena.
-3. **Corregir el reloj** de los eventos online desfasados (defecto 2, EG-22) y **ordenar** por `device_ts` corregido; a igual `device_ts`, por `server_ts`.
+3. **Corregir el reloj por sesión** (defecto 2, EG-22, `corregir_reloj_sesion`) y **ordenar** por `device_ts` corregido; a igual `device_ts`, por `server_ts`.
+   - Desfase de la sesión = mediana de `server_ts − device_ts` de sus eventos online.
+   - Si supera la tolerancia (`AtribucionOfflineConfig.tolerancia_reloj_segundos`, 60 s), se suma ese **mismo** desfase al `device_ts` de **todos** los eventos de la sesión: los tramos conservan su duración.
+   - Una sesión con algún evento offline **no** se corrige: su `server_ts` es la sincronización tardía, no la hora de la escucha.
 4. **Armar tramos continuos.** Un tramo **abre** con `start` o `resume` y **cierra** con el siguiente `pause`, `skip` o `end`.
    - ms del tramo = `position_ms` al cerrar − `position_ms` al abrir.
    - Si sale negativo, o si avanza más que el tiempo transcurrido entre los dos `device_ts` (más una tolerancia), el tramo es inconsistente: cuenta `min(Δposition_ms, Δdevice_ts)` y se marca para calidad.
@@ -88,7 +93,7 @@ Este es el contrato que usan EG-17 (RN-01, RN-02) y EG-18 (RN-03). Una **sesión
 
 ### Correspondencia con `Reproduccion` (`reglas/fraude.py`, RN-03) y `ReproduccionValidez` (`reglas/validez.py`, RN-01/RN-02)
 
-Hoy son dos clases; Silver (EG-35) arma un solo registro con todos estos campos.
+Hoy son dos clases (más `ReproduccionF2`, que extiende `ReproduccionValidez` con lo de RN-04); Silver (EG-35) arma un solo registro con todos estos campos.
 
 | Reproducción | Sale de | ¿Dónde existe hoy? |
 |---|---|---|
@@ -100,7 +105,8 @@ Hoy son dos clases; Silver (EG-35) arma un solo registro con todos estos campos.
 | `ms_escuchados` | **suma** de los ms de todos los tramos | Sí. RN-03 señal 1 lo usa como horas escuchadas. |
 | `track_id` | `track_id` | En `ReproduccionValidez` (EG-17); lo usa RN-02 (10 por pista, usuario y día). |
 | `ms_continuos_max` | el **mayor** tramo continuo | En `ReproduccionValidez` (EG-17); lo usa RN-01: válida si ≥ 30 000 ms (EG-11 Q1). |
-| `pais_reproduccion`, `is_offline`, `sincronizado` (`server_ts` del último evento) | `country_playback`, `is_offline`, `server_ts` | **No.** RN-08 y RN-04 (EG-22). |
+| `is_offline`, `sincronizado` (`server_ts` del último evento) | `is_offline` (alguno de la sesión), `server_ts` | En `ReproduccionF2` (`reglas/sesiones.py`, EG-22), subclase de `ReproduccionValidez`. Entradas de `atribuir_reproduccion` (RN-04). |
+| `pais_reproduccion` | `country_playback` | **No.** RN-08. |
 
 **Ojo con `Reproduccion.fin`:** se calcula como `inicio + ms_escuchados`, es decir, como si los tramos fueran seguidos. Con pausas largas el fin real es más tarde. Para RN-03 señal 1 la diferencia es menor (cuenta lo escuchado, no lo transcurrido), pero si EG-18 necesita precisión se deberían pasar los tramos en vez de una sola reproducción.
 

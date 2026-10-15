@@ -26,9 +26,9 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 | Q3 | RN-03 | Exclude the account for the day or the whole month? | Whole settlement month, under review (**Assumption**) | 2026-10-02 | Team | Exclusion period in `config.py` | EG-18 · EG-36 · EG-43 · ADR-0005 · ADR-0007 |
 | Q4 | RN-02 / RN-04 | Which time zone defines "day" and "month"? | UTC (**Assumption**) | 2026-10-02 | Team | Daily cap, month boundaries, offline cut-off | EG-17 · EG-22 · EG-15 · **ADR-0002** |
 | Q5 | RN-05 | "Net" subscription revenue, net of what? | Net value as stored in F3; nothing else deducted (**Assumption**) | 2026-10-02 | Team | Pool formula input | EG-13 · EG-23 · EG-37 |
-| Q6 | RN-10 | Family members in different countries: which country gets the revenue? | Billing country of the family account (**Assumption**) | 2026-10-02 | Team | Country pool attribution | EG-23 · EG-37 · ADR-0008 |
+| Q6 | RN-10 | Family members in different countries: which country gets the revenue? | Billing country of the family account (**Team decision**, ADR-0008) | 2026-10-13 | Team | Country pool attribution | EG-23 · EG-37 · [ADR-0008](../adr/0008-pais-bolsa-dos-componentes.md) |
 | Q7 | RN-06 | Does the contractual % change by territory? | Only if the contract defines it explicitly (**Assumption**) | 2026-10-02 | Team | F4 data model and settlement join | EG-14 · EG-20 · EG-23 |
-| Q8 | RN-05 / RN-06 | Do Free-plan plays enter the subscription denominator? | No; two components with separate denominators (**Assumption**) | 2026-10-02 | Team | Settlement formula | EG-23 · EG-37 · ADR-0008 |
+| Q8 | RN-05 / RN-06 | Do Free-plan plays enter the subscription denominator? | No; two components with separate denominators (**Team decision**, ADR-0008; to confirm with the instructor) | 2026-10-13 | Team | Settlement formula | EG-23 · EG-37 · [ADR-0008](../adr/0008-pais-bolsa-dos-componentes.md) |
 | Q9 | F1 | Unify duplicate tracks by `track_id`? | Yes, one canonical row per `track_id` (**Assumption**) | 2026-10-02 | Team | Clean catalog | EG-12 · ADR-0003 |
 | Q10 | Demo | Full 900k users on AWS or a subset? | Configurable subset; full volume possible (**Assumption**) | 2026-10-02 | Team | Seed volume, AWS cost | EG-28 · EG-45 · EG-32 · E-14 |
 
@@ -80,9 +80,9 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Question:** If members of the same family account stream from different countries, which country receives the subscription revenue?
 
-**Assumption:** The **billing country** of the family account. For settlement, the valid streams of all members are also counted in the billing country's pool (numerator and denominator), so revenue and streams stay in the same pool. The stream country is kept only for consumption analytics and for RN-08 (territorial exclusions).
+**Team decision ([ADR-0008](../adr/0008-pais-bolsa-dos-componentes.md), EG-23, 2026-10-13):** The **billing country** of the family account. For settlement, the valid streams of all members are also counted in the billing country's pool (numerator and denominator), so revenue and streams stay in the same pool. The stream country is kept only for consumption analytics and for RN-08 (territorial exclusions).
 
-**Impact:** EG-23, EG-37; final decision in ADR-0008 (country that defines the pool).
+**Impact:** implemented in EG-23 (`paises_facturacion` and `suscripcion_neta_por_pais` in `src/sonoraplay/reglas/liquidacion.py`: members inherit the family holder's billing country and the family payment enters the pool once); reused by EG-37. Decision and alternatives in ADR-0008.
 
 ### Q7 — RN-06: Contract percentage by territory
 
@@ -96,16 +96,16 @@ These assumptions are **not** instructor-approved requirements. When the instruc
 
 **Question:** Do Free-plan streams enter the denominator used to distribute the subscription component of the pool?
 
-**Assumption:** No. The pool is split into two components, each with its own denominator:
+**Team decision ([ADR-0008](../adr/0008-pais-bolsa-dos-componentes.md), EG-23, 2026-10-13):** No. The pool is split into two components, each with its own denominator:
 
 - **Subscription component** = 52% × net subscription revenue, distributed by valid streams from **paid plans** (individual, family, student).
 - **Advertising component** = 45% × advertising revenue, distributed by valid streams from the **Free plan**.
 
-Royalty per rights holder and country = sum of both components × contractual % (RN-06, RN-07). RNF-02 still holds: the sum per country never exceeds the pool (± 0.01 USD).
+Royalty per rights holder and country = (subscription component × paid share + advertising component × free share) × contractual % (RN-06, RN-07). Example (EG-23 criterion 1): Colombia with 100,000 USD subscription and 20,000 USD advertising, a holder with a 5 % paid share, a 10 % free share and an 80 % contract receives **2,800.00 USD**; with 5 % in both components the result is 2,440.00, the same as the single pool. RNF-02 still holds: the sum per country never exceeds the pool (± 0.01 USD; rounding rule in ADR-0007).
 
-**Note:** this is a deviation from the literal single-pool formula in RN-05/RN-06. It is the assumption with the biggest money impact and the first one to confirm with the instructor.
+**Note:** this is a deviation from the literal single-pool formula in RN-05/RN-06. It is the decision with the biggest money impact and the first one to confirm with the instructor; if the instructor asks for a single pool, ADR-0008 is superseded and only the denominator in `liquidar_pais` changes.
 
-**Impact:** settlement formula in EG-23 and EG-37; ADR-0008.
+**Impact:** implemented in EG-23 (`calcular_bolsa` and `liquidar_pais`, fractions in `ReglasLiquidacionConfig`); reused by EG-37; ADR-0008.
 
 ### Q9 — F1 duplicate tracks
 
@@ -126,6 +126,6 @@ Royalty per rights holder and country = sum of both components × contractual % 
 ## How this document is maintained
 
 1. The 10 questions were sent to the instructor on 2026-09-30; no answer yet.
-2. When an answer arrives, update its row: answer type changes from **Assumption** to **Instructor**, with date and name.
+2. When an answer arrives, update its row: answer type changes from **Assumption** (or **Team decision**, when an ADR already records it) to **Instructor**, with date and name.
 3. If the answer changes an assumption, update the affected story, tests, `config.py` value and ADR in the same PR, and comment on the Jira story.
 4. Related ADRs: ADR-0002 (Q4, Accepted), ADR-0003 (Q9), ADR-0005 (Q2, Q3), ADR-0007 (Q3), ADR-0008 (Q6, Q8).
