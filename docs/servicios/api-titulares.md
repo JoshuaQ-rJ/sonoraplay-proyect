@@ -263,7 +263,7 @@ docker compose up -d --wait postgres
 uv run --env-file .env python -m uvicorn sonoraplay.api_titulares.main:app --port 8001
 ```
 
-Luego se abre <http://localhost:8001/docs>.
+Luego se abre [http://localhost:8001/docs](http://localhost:8001/docs).
 
 **Aplicar el DDL 003 a un volumen que ya existe.** Los scripts de `db/ddl/` solo corren cuando se crea el volumen. Si tu base ya tiene datos, aplícalo a mano; el script es idempotente:
 
