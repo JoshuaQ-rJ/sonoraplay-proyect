@@ -16,12 +16,14 @@ import time
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-FRANKFURTER = "https://api.frankfurter.dev/v1"
+FRANKFURTER = "https://api.frankfurter.dev/v2/rates"
 REST_COUNTRIES = "https://restcountries.com/v3.1/all?fields=cca2,name,region,currencies"
-MONEDAS = ("BRL", "CLP", "COP", "EUR", "MXN", "PEN")
-PAISES = ("BR", "CL", "CO", "MX", "PE")
+PAIS_MONEDA = {"AR": "ARS", "BR": "BRL", "CL": "CLP", "CO": "COP", "MX": "MXN", "PE": "PEN"}
+MONEDAS = tuple(PAIS_MONEDA.values())
+PAISES = tuple(PAIS_MONEDA)
 CAMPOS_F5 = ("mes", "pais", "moneda", "ingresos_publicidad")
 
 
@@ -32,7 +34,13 @@ def obtener_json(url: str, intentos: int = 3) -> object:
             solicitud = Request(url, headers={"User-Agent": "SonoraPlay-EG30/1.0"})
             with urlopen(solicitud, timeout=20) as resp:
                 return json.load(resp)
-        except (OSError, ValueError):
+        except HTTPError as exc:
+            if exc.code not in (408, 429) and not 500 <= exc.code < 600:
+                raise
+            if intento == intentos - 1:
+                raise
+            time.sleep(min(2**intento, 4))
+        except OSError:
             if intento == intentos - 1:
                 raise
             time.sleep(min(2**intento, 4))
@@ -66,17 +74,43 @@ def validar_paises(datos: object) -> list[dict]:
     return [resultado[k] for k in sorted(resultado)]
 
 
-def validar_tasas(datos: object, monedas: tuple[str, ...] = MONEDAS) -> dict:
-    if not isinstance(datos, dict) or not isinstance(datos.get("rates"), dict):
-        raise ValueError("Respuesta F6 inválida")
-    tasas = datos["rates"]
-    faltantes = sorted(set(monedas) - set(tasas))
-    if faltantes:
-        raise ValueError(f"F6 sin cobertura para: {', '.join(faltantes)}; documentar fallback ADR")
-    for moneda in monedas:
-        if Decimal(str(tasas[moneda])) <= 0:
+def validar_tasas(
+    datos: object, monedas: tuple[str, ...] = MONEDAS, cierre: date | None = None
+) -> list[dict]:
+    """Normaliza Frankfurter v2; conserva fecha real y fecha de cierre UTC."""
+    if not isinstance(datos, list):
+        raise ValueError("Respuesta F6 inválida: se esperaba lista v2")
+    if cierre is None:
+        raise ValueError("F6 requiere fecha de cierre")
+    por_moneda: dict[str, dict] = {}
+    for item in datos:
+        if not isinstance(item, dict) or item.get("base") != "USD":
+            raise ValueError("F6 exige tasas con base USD")
+        moneda = item.get("quote")
+        if moneda not in monedas:
+            continue
+        try:
+            observacion = date.fromisoformat(item["date"])
+            valor = Decimal(str(item["rate"]))
+        except (KeyError, TypeError, ValueError, ArithmeticError) as exc:
+            raise ValueError(f"F6 inválida para {moneda}") from exc
+        if not valor.is_finite() or valor <= 0:
             raise ValueError(f"Tasa inválida: {moneda}")
-    return datos
+        if not date(cierre.year, cierre.month, 1) <= observacion <= cierre:
+            raise ValueError(f"Fecha de tasa fuera del mes: {moneda} {observacion}")
+        anterior = por_moneda.get(moneda)
+        if anterior is None or observacion > date.fromisoformat(anterior["fecha_observacion"]):
+            por_moneda[moneda] = {
+                "moneda": moneda,
+                "fecha": cierre.isoformat(),
+                "unidades_por_usd": str(valor),
+                "fecha_observacion": observacion.isoformat(),
+                "proveedor": "Frankfurter v2 (tasas combinadas)",
+            }
+    faltantes = sorted(set(monedas) - set(por_moneda))
+    if faltantes:
+        raise ValueError(f"F6 sin cobertura para: {', '.join(faltantes)}")
+    return [por_moneda[moneda] for moneda in monedas]
 
 
 def generar_f5(mes: str, paises: list[dict], semilla: int = 2026) -> list[dict]:
@@ -88,7 +122,7 @@ def generar_f5(mes: str, paises: list[dict], semilla: int = 2026) -> list[dict]:
         if codigo not in por_codigo:
             raise ValueError(f"F7 no contiene {codigo}")
         monedas = por_codigo[codigo]["monedas"]
-        esperada = {"BR": "BRL", "CL": "CLP", "CO": "COP", "MX": "MXN", "PE": "PEN"}[codigo]
+        esperada = PAIS_MONEDA[codigo]
         if esperada not in monedas:
             raise ValueError(f"F7 no confirma moneda {esperada} para {codigo}")
         valor = Decimal(rng.randint(100_000, 900_000)) / Decimal(100)
@@ -114,15 +148,15 @@ def escribir_atomico(destino: Path, contenido: str) -> None:
 
 
 def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
-    """Valida todas las fuentes antes de reemplazar cualquier salida."""
+    """Valida primero; reemplaza cada archivo de forma atómica, no los tres juntos."""
     import io
 
-    fecha = ultimo_dia(mes).isoformat()
+    cierre = ultimo_dia(mes)
+    fecha = cierre.isoformat()
     paises = validar_paises(obtener_json(REST_COUNTRIES))
-    # Frankfurter: base USD, rates indica unidades de moneda por USD.
-    tasas = validar_tasas(
-        obtener_json(f"{FRANKFURTER}/{fecha}?base=USD&symbols={','.join(MONEDAS)}")
-    )
+    # v2 devuelve una fila por par con fecha de observación propia.
+    url = f"{FRANKFURTER}?date={fecha}&base=USD&quotes={','.join(MONEDAS)}"
+    tasas = validar_tasas(obtener_json(url), cierre=cierre)
     filas = generar_f5(mes, paises, semilla)
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=CAMPOS_F5, lineterminator="\n")
