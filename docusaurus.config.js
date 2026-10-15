@@ -3,7 +3,7 @@ const config = {
   title: 'SonoraPlay Regalías',
   tagline: 'Documentación de arquitectura, datos y ejecución',
   favicon: 'img/favicon.svg',
-  url: 'https://joshu aq.invalid'.replace('joshu aq.invalid', 'joshuaq-rj.github.io'),
+  url: 'https://joshuaq-rj.github.io',
   baseUrl: '/sonoraplay-proyect/',
   organizationName: 'JoshuaQ-rJ',
   projectName: 'sonoraplay-proyect',
