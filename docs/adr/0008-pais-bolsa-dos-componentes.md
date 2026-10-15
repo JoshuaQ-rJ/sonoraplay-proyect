@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto |
+| Estado | Aceptado |
 | Fecha | 2026-10-13 |
 | Historia que lo origina | HU 14 · EG-23 |
 | Responsable | Andrea Zárate y María Clara Manjarrés |
-| Revisó | Pendiente (revisor del PR) |
+| Revisó | Joshua — aprobado el 2026-10-13, validado en la práctica por el esqueleto de la EG-24 (PR #25) |
 | Referencias | RN-05, RN-06, RN-08, RN-10, RNF-02, EG-11 Q5 / Q6 / Q7 / Q8, ADR-0002, ADR-0007 |
 
 ## 1. Contexto
@@ -122,6 +122,7 @@ En `tests/reglas/test_liquidacion.py`:
   - `test_conversion_rechaza_tasa_de_otra_fecha_o_moneda`;
   - `test_ultimo_dia_del_mes`, con un año bisiesto.
 - **Precedencia (RN-08, Q7):** `test_paridad_con_elegir_condicion` (20 combinaciones de país y día) comprueba que la liquidación elige la misma condición que la API de contratos (EG-20).
+- **De punta a punta (EG-24):** `tests/esqueleto/test_calculo_a_mano.py::test_regalia_coincide_con_el_calculo_a_mano` liquida 100 eventos simulados contra PostgreSQL y recalcula a mano la bolsa del país de facturación (52 % de los pagos aprobados + 45 % de la publicidad), con un denominador por componente (± 0,01).
 - **Cuando el docente responda Q8:** se actualiza [ambiguedades-rn.md](../analisis/ambiguedades-rn.md) y, si cambia, este ADR.
 
 ## 7. Fuentes
