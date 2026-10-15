@@ -7,7 +7,7 @@ const config = {
   baseUrl: '/sonoraplay-proyect/',
   organizationName: 'JoshuaQ-rJ',
   projectName: 'sonoraplay-proyect',
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   i18n: { defaultLocale: 'es', locales: ['es', 'en'], localeConfigs: { es: { label: 'Español' }, en: { label: 'English' } } },
   presets: [['classic', {
