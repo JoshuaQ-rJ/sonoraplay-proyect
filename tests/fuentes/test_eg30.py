@@ -1,13 +1,13 @@
 """Pruebas offline para EG-30: no dependen de APIs externas."""
 
 from datetime import date
-from urllib.error import HTTPError
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 import pytest
 
 import sonoraplay.fuentes.eg30 as eg30
 from sonoraplay.fuentes.eg30 import generar_f5, ultimo_dia, validar_paises, validar_tasas
+from sonoraplay.fuentes.f5_publicidad import PAIS_MONEDA
 
 
 def paises():
@@ -41,7 +41,7 @@ def test_f5_exige_moneda_de_f7():
             "2026-09",
             [
                 {"pais": codigo, "monedas": ["USD"] if codigo == "BR" else [moneda]}
-                for codigo, moneda in eg30.PAIS_MONEDA.items()
+                for codigo, moneda in PAIS_MONEDA.items()
             ],
         )
 
