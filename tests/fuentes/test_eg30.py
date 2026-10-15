@@ -1,6 +1,7 @@
 """Pruebas offline para EG-30: no dependen de APIs externas."""
 
 from datetime import date
+from urllib.error import HTTPError
 from urllib.error import URLError
 
 import pytest
@@ -123,3 +124,72 @@ def test_ejecutar_no_escribe_si_f6_incompleta(monkeypatch, tmp_path):
     with pytest.raises(ValueError, match="cobertura"):
         eg30.ejecutar("2026-09", tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_http_400_no_reintenta(monkeypatch):
+    llamadas = []
+
+    def fallo(_request, timeout):
+        llamadas.append(timeout)
+        raise HTTPError("https://example.org", 400, "bad request", {}, None)
+
+    monkeypatch.setattr(eg30, "urlopen", fallo)
+    with pytest.raises(HTTPError):
+        eg30.obtener_json("https://example.org")
+    assert len(llamadas) == 1
+
+
+def test_http_503_reintenta_y_falla(monkeypatch):
+    llamadas = []
+
+    def fallo(_request, timeout):
+        llamadas.append(timeout)
+        raise HTTPError("https://example.org", 503, "unavailable", {}, None)
+
+    monkeypatch.setattr(eg30, "urlopen", fallo)
+    monkeypatch.setattr(eg30.time, "sleep", lambda _: None)
+    with pytest.raises(HTTPError):
+        eg30.obtener_json("https://example.org", intentos=3)
+    assert len(llamadas) == 3
+
+
+def test_escritura_atomica_reemplaza_contenido(tmp_path):
+    destino = tmp_path / "datos" / "f5.csv"
+    destino.parent.mkdir()
+    destino.write_text("viejo", encoding="utf-8")
+    eg30.escribir_atomico(destino, "nuevo")
+    assert destino.read_text(encoding="utf-8") == "nuevo"
+    assert list(destino.parent.iterdir()) == [destino]
+
+
+def test_ejecutar_tres_fuentes_simuladas(monkeypatch, tmp_path):
+    import csv
+    import json
+
+    def simular(url):
+        if url == eg30.REST_COUNTRIES:
+            datos = [
+                {
+                    "cca2": f"{chr(65 + i // 26)}{chr(65 + i % 26)}",
+                    "currencies": {"USD": {}},
+                    "region": "Other",
+                }
+                for i in range(200)
+            ]
+            datos += [
+                {"cca2": pais, "currencies": {moneda: {}}, "region": "Americas"}
+                for pais, moneda in eg30.PAIS_MONEDA.items()
+            ]
+            return datos
+        return [
+            {"base": "USD", "quote": moneda, "date": "2026-09-30", "rate": 100}
+            for moneda in eg30.MONEDAS
+        ]
+
+    monkeypatch.setattr(eg30, "obtener_json", simular)
+    eg30.ejecutar("2026-09", tmp_path)
+    with (tmp_path / "f5_publicidad_2026-09.csv").open(encoding="utf-8") as fh:
+        assert len(list(csv.DictReader(fh))) == 6
+    tasas = json.loads((tmp_path / "f6_tasas_2026-09-30.json").read_text())
+    assert len(tasas) == 6
+    assert len(json.loads((tmp_path / "f7_paises.json").read_text())) >= 200
