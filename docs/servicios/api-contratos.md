@@ -149,7 +149,7 @@ docker compose up -d --wait postgres
 uv run --env-file .env python -m uvicorn sonoraplay.api_contratos.main:app --port 8000
 ```
 
-Luego se abre <http://localhost:8000/docs>. Para obtener un titular real:
+Luego se abre [http://localhost:8000/docs](http://localhost:8000/docs). Para obtener un titular real:
 
 ```bash
 docker exec sonoraplay-postgres psql -U sonora -d sonoraplay -c "SELECT titular_id FROM contratos LIMIT 1"
