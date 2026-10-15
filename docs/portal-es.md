@@ -1,5 +1,6 @@
 ---
 id: portal-es
+slug: /
 title: Inicio · Español
 sidebar_position: 1
 ---
