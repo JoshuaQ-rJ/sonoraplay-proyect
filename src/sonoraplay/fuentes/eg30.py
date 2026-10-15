@@ -17,10 +17,14 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from sonoraplay.fuentes.f5_publicidad import CAMPOS_F5, PAIS_MONEDA
-from sonoraplay.fuentes.f5_publicidad import generar_f5
+from sonoraplay.fuentes.f5_publicidad import CAMPOS_F5, generar_f5
 from sonoraplay.fuentes.f6_tasas import FRANKFURTER, MONEDAS, validar_tasas
 from sonoraplay.fuentes.f7_paises import REST_COUNTRIES, validar_paises
+
+# Compatibilidad con integraciones existentes; fuente única en f5_publicidad.
+from sonoraplay.fuentes import f5_publicidad as _f5_publicidad
+
+PAIS_MONEDA = _f5_publicidad.PAIS_MONEDA
 
 
 def obtener_json(url: str, intentos: int = 3) -> object:
