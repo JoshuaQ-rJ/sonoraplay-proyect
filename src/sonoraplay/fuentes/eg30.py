@@ -17,7 +17,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from sonoraplay.fuentes.f5_publicidad import CAMPOS_F5
+from sonoraplay.fuentes.f5_publicidad import CAMPOS_F5, PAIS_MONEDA
 from sonoraplay.fuentes.f5_publicidad import generar_f5
 from sonoraplay.fuentes.f6_tasas import FRANKFURTER, MONEDAS, validar_tasas
 from sonoraplay.fuentes.f7_paises import REST_COUNTRIES, validar_paises
