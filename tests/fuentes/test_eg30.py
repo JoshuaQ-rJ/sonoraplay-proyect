@@ -5,7 +5,6 @@ from urllib.error import URLError
 import pytest
 
 import sonoraplay.fuentes.eg30 as eg30
-
 from sonoraplay.fuentes.eg30 import generar_f5, ultimo_dia, validar_paises, validar_tasas
 
 
