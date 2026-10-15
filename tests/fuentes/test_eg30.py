@@ -115,7 +115,7 @@ def test_ejecutar_no_escribe_si_f6_incompleta(monkeypatch, tmp_path):
             ]
             datos += [
                 {"cca2": codigo, "currencies": {moneda: {}}, "region": "Americas"}
-                for codigo, moneda in eg30.PAIS_MONEDA.items()
+                for codigo, moneda in PAIS_MONEDA.items()
             ]
             return datos
         return [{"base": "USD", "quote": "BRL", "date": "2026-09-30", "rate": 5}]
@@ -178,7 +178,7 @@ def test_ejecutar_tres_fuentes_simuladas(monkeypatch, tmp_path):
             ]
             datos += [
                 {"cca2": pais, "currencies": {moneda: {}}, "region": "Americas"}
-                for pais, moneda in eg30.PAIS_MONEDA.items()
+                for pais, moneda in PAIS_MONEDA.items()
             ]
             return datos
         return [
