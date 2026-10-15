@@ -19,7 +19,7 @@ locals {
   # Entrada entre SG: destino => [(origen, puerto, descripción)].
   reglas_entre_sg = [
     { destino = "api-titulares", origen = "alb", puerto = 8000, desc = "ALB a la API de sellos" },
-    { destino = "api-contratos", origen = "spark", puerto = 8000, desc = "Spark consulta el % vigente" },
+    { destino = "api-contratos", origen = "spark", puerto = 8000, desc = "Spark consulta el porcentaje vigente" },
     { destino = "rds", origen = "api-titulares", puerto = 5432, desc = "API de sellos lee liquidaciones" },
     { destino = "rds", origen = "api-contratos", puerto = 5432, desc = "API F4 lee contratos" },
     { destino = "rds", origen = "spark", puerto = 5432, desc = "Spark carga modelo y liquidacion" },
