@@ -1,6 +1,7 @@
 """F5: ingresos publicitarios reproducibles para seis países."""
 
 import random
+from datetime import date
 from decimal import Decimal
 
 PAIS_MONEDA = {"AR": "ARS", "BR": "BRL", "CL": "CLP", "CO": "COP", "MX": "MXN", "PE": "PEN"}
@@ -9,7 +10,7 @@ CAMPOS_F5 = ("mes", "pais", "moneda", "ingresos_publicidad")
 
 
 def generar_f5(mes: str, paises: list[dict], semilla: int = 2026) -> list[dict]:
-    ultimo_dia(mes)
+    date.fromisoformat(mes + "-01")
     por_codigo = {p["pais"]: p for p in paises}
     rng = random.Random(f"sonoraplay:f5:{semilla}:{mes}")
     filas = []
