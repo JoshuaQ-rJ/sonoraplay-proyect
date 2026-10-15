@@ -92,7 +92,7 @@ def test_ejecutar_no_escribe_si_f6_incompleta(monkeypatch, tmp_path):
     def simular(url):
         if url == eg30.REST_COUNTRIES:
             datos = [
-                {"cca2": f"X{i:02d}", "currencies": {"USD": {}}, "region": "Other"}
+                {"cca2": f"{chr(65 + i // 26)}{chr(65 + i % 26)}", "currencies": {"USD": {}}, "region": "Other"}
                 for i in range(200)
             ]
             datos += [
