@@ -22,7 +22,6 @@ from sonoraplay.fuentes.f6_tasas import FRANKFURTER, MONEDAS, validar_tasas
 from sonoraplay.fuentes.f7_paises import REST_COUNTRIES, validar_paises
 
 
-
 def obtener_json(url: str, intentos: int = 3) -> object:
     """Reintenta errores transitorios; falla sin escribir archivos parciales."""
     for intento in range(intentos):
