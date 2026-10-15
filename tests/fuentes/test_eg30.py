@@ -12,7 +12,14 @@ from sonoraplay.fuentes.eg30 import generar_f5, ultimo_dia, validar_paises, vali
 def paises():
     return [
         {"pais": c, "monedas": [m]}
-        for c, m in [("AR", "ARS"), ("BR", "BRL"), ("CL", "CLP"), ("CO", "COP"), ("MX", "MXN"), ("PE", "PEN")]
+        for c, m in [
+            ("AR", "ARS"),
+            ("BR", "BRL"),
+            ("CL", "CLP"),
+            ("CO", "COP"),
+            ("MX", "MXN"),
+            ("PE", "PEN"),
+        ]
     ]
 
 
@@ -36,7 +43,8 @@ def test_f6_rechaza_faltantes():
     with pytest.raises(ValueError, match="cobertura"):
         validar_tasas(
             [{"base": "USD", "quote": "BRL", "date": "2026-09-30", "rate": 5}],
-            ("BRL", "COP"), date(2026, 9, 30)
+            ("BRL", "COP"),
+            date(2026, 9, 30),
         )
 
 
@@ -71,9 +79,7 @@ def test_cli_mes_invalido_sin_traceback(monkeypatch, capsys, tmp_path):
 
 
 def test_f6_normaliza_cierre_domingo_y_decimal():
-    filas = [
-        {"base": "USD", "quote": "COP", "date": "2026-05-29", "rate": 4000.125}
-    ]
+    filas = [{"base": "USD", "quote": "COP", "date": "2026-05-29", "rate": 4000.125}]
     resultado = validar_tasas(filas, ("COP",), date(2026, 5, 31))
     assert resultado[0]["fecha"] == "2026-05-31"
     assert resultado[0]["fecha_observacion"] == "2026-05-29"
@@ -84,7 +90,8 @@ def test_f6_rechaza_fecha_de_otro_mes():
     with pytest.raises(ValueError, match="fuera del mes"):
         validar_tasas(
             [{"base": "USD", "quote": "COP", "date": "2026-04-30", "rate": 4000}],
-            ("COP",), date(2026, 5, 31)
+            ("COP",),
+            date(2026, 5, 31),
         )
 
 
@@ -92,7 +99,11 @@ def test_ejecutar_no_escribe_si_f6_incompleta(monkeypatch, tmp_path):
     def simular(url):
         if url == eg30.REST_COUNTRIES:
             datos = [
-                {"cca2": f"{chr(65 + i // 26)}{chr(65 + i % 26)}", "currencies": {"USD": {}}, "region": "Other"}
+                {
+                    "cca2": f"{chr(65 + i // 26)}{chr(65 + i % 26)}",
+                    "currencies": {"USD": {}},
+                    "region": "Other",
+                }
                 for i in range(200)
             ]
             datos += [
