@@ -116,8 +116,8 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
     """Valida todas las fuentes antes de reemplazar cualquier salida."""
     import io
 
-    paises = validar_paises(obtener_json(REST_COUNTRIES))
     fecha = ultimo_dia(mes).isoformat()
+    paises = validar_paises(obtener_json(REST_COUNTRIES))
     # Frankfurter: base USD, rates indica unidades de moneda por USD.
     tasas = validar_tasas(
         obtener_json(f"{FRANKFURTER}/{fecha}?base=USD&symbols={','.join(MONEDAS)}")
