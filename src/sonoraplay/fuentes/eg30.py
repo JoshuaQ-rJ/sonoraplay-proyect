@@ -10,6 +10,7 @@ import csv
 import json
 import os
 import random
+import sys
 import tempfile
 import time
 from datetime import date, timedelta
@@ -142,7 +143,11 @@ def main() -> None:
     parser.add_argument("--salida", type=Path, default=Path("data/generated/eg30"))
     parser.add_argument("--semilla", type=int, default=2026)
     args = parser.parse_args()
-    ejecutar(args.mes, args.salida, args.semilla)
+    try:
+        ejecutar(args.mes, args.salida, args.semilla)
+    except (OSError, ValueError) as exc:
+        print(f"Error EG-30: {exc}", file=sys.stderr)
+        raise SystemExit(1) from None
     print(f"F5/F6/F7 generados en {args.salida}")
 
 
