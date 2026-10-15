@@ -2,6 +2,7 @@
 
 Los datos de F6/F7 se obtienen de las APIs oficiales; no se inventan respuestas.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -14,7 +15,6 @@ import time
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 FRANKFURTER = "https://api.frankfurter.dev/v1"
@@ -30,7 +30,7 @@ def obtener_json(url: str, intentos: int = 3) -> object:
         try:
             with urlopen(Request(url, headers={"User-Agent": "SonoraPlay-EG30/1.0"}), timeout=20) as resp:
                 return json.load(resp)
-        except (OSError, ValueError, HTTPError, URLError):
+        except (OSError, ValueError):
             if intento == intentos - 1:
                 raise
             time.sleep(min(2**intento, 4))
@@ -90,8 +90,9 @@ def generar_f5(mes: str, paises: list[dict], semilla: int = 2026) -> list[dict]:
         if esperada not in monedas:
             raise ValueError(f"F7 no confirma moneda {esperada} para {codigo}")
         valor = Decimal(rng.randint(100_000, 900_000)) / Decimal(100)
-        filas.append({"mes": mes, "pais": codigo, "moneda": esperada,
-                      "ingresos_publicidad": f"{valor:.2f}"})
+        filas.append(
+            {"mes": mes, "pais": codigo, "moneda": esperada, "ingresos_publicidad": f"{valor:.2f}"}
+        )
     return filas
 
 
@@ -99,8 +100,9 @@ def escribir_atomico(destino: Path, contenido: str) -> None:
     destino.parent.mkdir(parents=True, exist_ok=True)
     temporal = None
     try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="",
-                                         dir=destino.parent, delete=False) as fh:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="", dir=destino.parent, delete=False
+        ) as fh:
             temporal = Path(fh.name)
             fh.write(contenido)
         os.replace(temporal, destino)
@@ -116,9 +118,9 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
     paises = validar_paises(obtener_json(REST_COUNTRIES))
     fecha = ultimo_dia(mes).isoformat()
     # Frankfurter: base USD, rates indica unidades de moneda por USD.
-    tasas = validar_tasas(obtener_json(
-        f"{FRANKFURTER}/{fecha}?base=USD&symbols={','.join(MONEDAS)}"
-    ))
+    tasas = validar_tasas(
+        obtener_json(f"{FRANKFURTER}/{fecha}?base=USD&symbols={','.join(MONEDAS)}")
+    )
     filas = generar_f5(mes, paises, semilla)
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=CAMPOS_F5, lineterminator="\n")
@@ -126,10 +128,12 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
     escritor.writerows(filas)
     # Escribe el manifiesto después de validar; la sustitución de cada archivo es atómica.
     escribir_atomico(salida / f"f5_publicidad_{mes}.csv", buffer.getvalue())
-    escribir_atomico(salida / f"f6_tasas_{fecha}.json",
-                     json.dumps(tasas, ensure_ascii=False, indent=2) + "\n")
-    escribir_atomico(salida / "f7_paises.json",
-                     json.dumps(paises, ensure_ascii=False, indent=2) + "\n")
+    escribir_atomico(
+        salida / f"f6_tasas_{fecha}.json", json.dumps(tasas, ensure_ascii=False, indent=2) + "\n"
+    )
+    escribir_atomico(
+        salida / "f7_paises.json", json.dumps(paises, ensure_ascii=False, indent=2) + "\n"
+    )
 
 
 def main() -> None:
