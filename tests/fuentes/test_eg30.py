@@ -7,8 +7,10 @@ from sonoraplay.fuentes.eg30 import generar_f5, ultimo_dia, validar_paises, vali
 
 
 def paises():
-    return [{"pais": c, "monedas": [m]} for c, m in
-            [("BR", "BRL"), ("CL", "CLP"), ("CO", "COP"), ("MX", "MXN"), ("PE", "PEN")]]
+    return [
+        {"pais": c, "monedas": [m]}
+        for c, m in [("BR", "BRL"), ("CL", "CLP"), ("CO", "COP"), ("MX", "MXN"), ("PE", "PEN")]
+    ]
 
 
 def test_ultimo_dia_bisiesto():
