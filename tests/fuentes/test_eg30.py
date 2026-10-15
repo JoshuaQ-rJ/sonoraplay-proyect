@@ -36,7 +36,13 @@ def test_f5_determinista_y_menos_de_mil():
 
 def test_f5_exige_moneda_de_f7():
     with pytest.raises(ValueError, match="moneda"):
-        generar_f5("2026-09", [{"pais": "BR", "monedas": ["USD"]}])
+        generar_f5(
+            "2026-09",
+            [
+                {"pais": codigo, "monedas": ["USD"] if codigo == "BR" else [moneda]}
+                for codigo, moneda in eg30.PAIS_MONEDA.items()
+            ],
+        )
 
 
 def test_f6_rechaza_faltantes():
