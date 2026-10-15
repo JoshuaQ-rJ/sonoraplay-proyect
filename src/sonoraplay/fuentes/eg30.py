@@ -29,7 +29,8 @@ def obtener_json(url: str, intentos: int = 3) -> object:
     """Reintenta errores transitorios; falla sin escribir archivos parciales."""
     for intento in range(intentos):
         try:
-            with urlopen(Request(url, headers={"User-Agent": "SonoraPlay-EG30/1.0"}), timeout=20) as resp:
+            solicitud = Request(url, headers={"User-Agent": "SonoraPlay-EG30/1.0"})
+            with urlopen(solicitud, timeout=20) as resp:
                 return json.load(resp)
         except (OSError, ValueError):
             if intento == intentos - 1:
