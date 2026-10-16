@@ -8,6 +8,7 @@ import pytest
 import sonoraplay.fuentes.eg30 as eg30
 from sonoraplay.fuentes.eg30 import generar_f5, ultimo_dia, validar_paises, validar_tasas
 from sonoraplay.fuentes.f5_publicidad import PAIS_MONEDA
+from sonoraplay.fuentes.f6_tasas import validar_tasas_diarias
 
 
 def paises():
@@ -193,3 +194,57 @@ def test_ejecutar_tres_fuentes_simuladas(monkeypatch, tmp_path):
     tasas = json.loads((tmp_path / "f6_tasas_2026-09-30.json").read_text())
     assert len(tasas) == 6
     assert len(json.loads((tmp_path / "f7_paises.json").read_text())) >= 200
+
+
+def test_f6_diaria_conserva_observaciones_sin_inventar_festivos():
+    datos = [
+        {"base": "USD", "quote": "COP", "date": "2026-05-28", "rate": "3800.25"},
+        {"base": "USD", "quote": "COP", "date": "2026-05-29", "rate": "3810.25"},
+        {"base": "USD", "quote": "PEN", "date": "2026-05-29", "rate": "3.75"},
+    ]
+    filas = validar_tasas_diarias(datos, ("COP", "PEN"), date(2026, 5, 1), date(2026, 5, 31))
+    assert len(filas) == 3
+    assert {fila["fecha"] for fila in filas} == {"2026-05-28", "2026-05-29"}
+    assert filas[0]["unidades_por_usd"] == "3800.25"
+
+
+def test_f6_diaria_rechaza_faltantes_y_duplicados_contradictorios():
+    datos = [{"base": "USD", "quote": "COP", "date": "2026-09-30", "rate": "4000"}]
+    with pytest.raises(ValueError, match="cobertura"):
+        validar_tasas_diarias(datos, ("COP", "ARS"), date(2026, 9, 1), date(2026, 9, 30))
+    with pytest.raises(ValueError, match="contradictorias"):
+        validar_tasas_diarias(
+            datos + [{**datos[0], "rate": "4001"}],
+            ("COP",),
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+        )
+
+
+def test_ejecutar_diarias_no_escribe_si_serie_incompleta(monkeypatch, tmp_path):
+    def simular(url):
+        if url == eg30.REST_COUNTRIES:
+            datos = [
+                {
+                    "cca2": f"{chr(65 + i // 26)}{chr(65 + i % 26)}",
+                    "currencies": {"USD": {}},
+                    "region": "Other",
+                }
+                for i in range(200)
+            ]
+            datos += [
+                {"cca2": pais, "currencies": {moneda: {}}, "region": "Americas"}
+                for pais, moneda in PAIS_MONEDA.items()
+            ]
+            return datos
+        if "from=" in url:
+            return [{"base": "USD", "quote": "COP", "date": "2026-09-30", "rate": 4000}]
+        return [
+            {"base": "USD", "quote": moneda, "date": "2026-09-30", "rate": 100}
+            for moneda in eg30.MONEDAS
+        ]
+
+    monkeypatch.setattr(eg30, "obtener_json", simular)
+    with pytest.raises(ValueError, match="cobertura"):
+        eg30.ejecutar("2026-09", tmp_path, diarias=True)
+    assert list(tmp_path.iterdir()) == []
