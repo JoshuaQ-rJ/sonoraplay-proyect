@@ -18,7 +18,12 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from sonoraplay.fuentes.f5_publicidad import CAMPOS_F5, generar_f5
-from sonoraplay.fuentes.f6_tasas import FRANKFURTER, MONEDAS, validar_tasas
+from sonoraplay.fuentes.f6_tasas import (
+    FRANKFURTER,
+    MONEDAS,
+    validar_tasas,
+    validar_tasas_diarias,
+)
 from sonoraplay.fuentes.f7_paises import REST_COUNTRIES, validar_paises
 
 
@@ -63,7 +68,7 @@ def escribir_atomico(destino: Path, contenido: str) -> None:
             temporal.unlink(missing_ok=True)
 
 
-def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
+def ejecutar(mes: str, salida: Path, semilla: int = 2026, diarias: bool = False) -> None:
     """Valida primero; reemplaza cada archivo de forma atómica, no los tres juntos."""
     import io
 
@@ -73,6 +78,16 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
     # v2 devuelve una fila por par con fecha de observación propia.
     url = f"{FRANKFURTER}?date={fecha}&base=USD&quotes={','.join(MONEDAS)}"
     tasas = validar_tasas(obtener_json(url), cierre=cierre)
+    serie_diaria = None
+    if diarias:
+        inicio = cierre.replace(day=1)
+        url_diaria = (
+            f"{FRANKFURTER}?from={inicio.isoformat()}&to={fecha}"
+            f"&base=USD&quotes={','.join(MONEDAS)}"
+        )
+        serie_diaria = validar_tasas_diarias(
+            obtener_json(url_diaria), MONEDAS, inicio, cierre
+        )
     filas = generar_f5(mes, paises, semilla)
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=CAMPOS_F5, lineterminator="\n")
@@ -86,6 +101,11 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026) -> None:
     escribir_atomico(
         salida / "f7_paises.json", json.dumps(paises, ensure_ascii=False, indent=2) + "\n"
     )
+    if serie_diaria is not None:
+        escribir_atomico(
+            salida / f"f6_tasas_diarias_{mes}.json",
+            json.dumps(serie_diaria, ensure_ascii=False, indent=2) + "\n",
+        )
 
 
 def main() -> None:
@@ -93,9 +113,10 @@ def main() -> None:
     parser.add_argument("--mes", required=True, help="AAAA-MM")
     parser.add_argument("--salida", type=Path, default=Path("data/generated/eg30"))
     parser.add_argument("--semilla", type=int, default=2026)
+    parser.add_argument("--diarias", action="store_true", help="incluir observaciones F6 diarias")
     args = parser.parse_args()
     try:
-        ejecutar(args.mes, args.salida, args.semilla)
+        ejecutar(args.mes, args.salida, args.semilla, args.diarias)
     except (OSError, ValueError) as exc:
         print(f"Error EG-30: {exc}", file=sys.stderr)
         raise SystemExit(1) from None
