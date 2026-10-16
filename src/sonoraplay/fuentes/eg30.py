@@ -85,9 +85,7 @@ def ejecutar(mes: str, salida: Path, semilla: int = 2026, diarias: bool = False)
             f"{FRANKFURTER}?from={inicio.isoformat()}&to={fecha}"
             f"&base=USD&quotes={','.join(MONEDAS)}"
         )
-        serie_diaria = validar_tasas_diarias(
-            obtener_json(url_diaria), MONEDAS, inicio, cierre
-        )
+        serie_diaria = validar_tasas_diarias(obtener_json(url_diaria), MONEDAS, inicio, cierre)
     filas = generar_f5(mes, paises, semilla)
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=CAMPOS_F5, lineterminator="\n")
