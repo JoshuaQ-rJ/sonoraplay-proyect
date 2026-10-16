@@ -88,3 +88,16 @@ Offline tests for six currencies, decimal precision, observation-vs-closing date
 - **Not verified:** live Frankfurter v2 responses for all six currencies, particularly PEN; actual weekend behavior; rate-specific licensing/attribution; PostgreSQL UPSERT integration.
 - **Differences from the proposal:** the current JSON includes `moneda`, `fecha`, `unidades_por_usd`, `fecha_observacion`, and `proveedor`, but not yet `extraido_en_utc`. Current validation rejects observations from earlier months; the last-available-observation policy still requires a decision.
 - **Decision requested from the TL:** approve or reject Frankfurter v2 combined rates, define weekend month-end handling, rate provenance, and persistence contract. Do not use these rates for official settlements without that decision and live integration tests.
+
+
+## Actualización de decisión comunicada / Reported decision update — 2026-10-16
+
+### Español
+La responsable de EG-30 comunica que Joshua autorizó **utilizar Frankfurter** y, si el cierre mensual cae **sábado o domingo**, tomar la **cotización disponible del día hábil anterior más cercano**. El campo `fecha` mantiene el último día calendario del mes para la liquidación y `fecha_observacion` conserva el día de cotización real. Por ejemplo, para el domingo 2026-05-31, se espera la observación del viernes 2026-05-29 **si la fuente la publica**. No se generan cotizaciones artificiales.
+
+**Alcance de la evidencia:** aprobación comunicada por la integrante del equipo en la conversación; todavía **no hay confirmación escrita del TL en este ADR/PR**. Por tanto, el estado formal sigue **Propuesto / Proposed** hasta que Joshua lo confirme en GitHub. La autorización reportada menciona Frankfurter, **sin especificar inequívocamente v2 o la modalidad de tasas combinadas**. La implementación actual usa v2 porque v1 no cubre las seis monedas; su cobertura y licenciamiento deben verificarse en vivo. Para feriados o ausencia de cotización el viernes, se necesita definir si se retrocede al último día con tasa publicada. El contrato PostgreSQL también requiere coordinación.
+
+### English
+The EG-30 owner reports that Joshua authorized **Frankfurter** and instructed the team to use the **nearest previous business day's available rate** when calendar month-end falls on a **Saturday or Sunday**. The `fecha` field retains the calendar month-end required for settlement, while `fecha_observacion` preserves the actual quotation date. For Sunday 2026-05-31, the expected observation is Friday 2026-05-29 **if published by the provider**. Rates must never be fabricated.
+
+**Evidence scope:** this approval was reported by the team member in conversation; there is **no written TL confirmation in this ADR/PR yet**. Formal ADR status therefore remains **Proposed** until Joshua confirms it on GitHub. The reported approval names Frankfurter but **does not unambiguously specify v2 or blended-rate semantics**. The current adapter uses v2 because v1 lacks required currency coverage; live coverage and licensing checks remain necessary. Holiday cases where Friday has no quotation require a defined fallback policy. PostgreSQL persistence contracts also require coordination.
