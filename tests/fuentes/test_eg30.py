@@ -248,3 +248,41 @@ def test_ejecutar_diarias_no_escribe_si_serie_incompleta(monkeypatch, tmp_path):
     with pytest.raises(ValueError, match="cobertura"):
         eg30.ejecutar("2026-09", tmp_path, diarias=True)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_f6_cierre_sabado_usa_viernes_anterior():
+    datos = [
+        {"base": "USD", "quote": "COP", "date": "2026-10-29", "rate": "3850.20"},
+        {"base": "USD", "quote": "COP", "date": "2026-10-30", "rate": "3851.25"},
+    ]
+    filas = validar_tasas(datos, ("COP",), date(2026, 10, 31))
+    assert filas[0]["fecha"] == "2026-10-31"
+    assert filas[0]["fecha_observacion"] == "2026-10-30"
+    assert filas[0]["unidades_por_usd"] == "3851.25"
+
+
+def test_f6_cierre_domingo_seis_monedas_sin_fabricar_tasas():
+    datos = [
+        {"base": "USD", "quote": moneda, "date": "2026-05-29", "rate": str(i + 1)}
+        for i, moneda in enumerate(eg30.MONEDAS)
+    ]
+    filas = validar_tasas(datos, cierre=date(2026, 5, 31))
+    assert len(filas) == 6
+    assert {fila["fecha"] for fila in filas} == {"2026-05-31"}
+    assert {fila["fecha_observacion"] for fila in filas} == {"2026-05-29"}
+    assert {fila["moneda"] for fila in filas} == set(eg30.MONEDAS)
+
+
+def test_f6_rechaza_observacion_futura_y_tasa_no_positiva():
+    with pytest.raises(ValueError, match="fuera del mes"):
+        validar_tasas(
+            [{"base": "USD", "quote": "COP", "date": "2026-06-01", "rate": "4000"}],
+            ("COP",),
+            date(2026, 5, 31),
+        )
+    with pytest.raises(ValueError, match="Tasa inválida"):
+        validar_tasas(
+            [{"base": "USD", "quote": "COP", "date": "2026-05-29", "rate": "0"}],
+            ("COP",),
+            date(2026, 5, 31),
+        )
