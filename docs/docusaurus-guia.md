@@ -18,7 +18,7 @@ Este portal reutiliza la carpeta `docs/` existente y **no cambia** el funcionami
 
 El selector de idioma está preparado, pero **los documentos históricos aún no tienen traducción completa**. El contenido en español es el original; la página `Overview · English` es un resumen equivalente de la introducción. No se debe presentar el resto como traducido.
 
-**Publicación:** la configuración incluye la URL base prevista para GitHub Pages, pero este PR no activa Pages ni realiza despliegues. Joshua debe aprobar el destino y las políticas de publicación antes de configurar el workflow.
+**Publicación:** la configuración incluye la URL base prevista para GitHub Pages y existe un workflow de Docusaurus en `develop`, pero una compilación correcta no significa que el portal esté publicado. Joshua debe integrar el workflow en `main` y un administrador debe configurar **Settings → Pages → Build and deployment → GitHub Actions**. No se modifica `main` ni se activa Pages desde esta guía.
 
 ## English
 
@@ -32,4 +32,33 @@ This portal reuses the existing `docs/` directory and **does not alter** the Son
 
 The locale selector is configured, but **historical technical documents have not been fully translated**. Spanish is the source language; `Overview · English` provides an English overview. Do not claim the remaining pages are translated.
 
-**Publishing:** the GitHub Pages base URL is preconfigured, but this PR does not enable Pages or deploy anything. Joshua must approve the publishing destination and workflow first.
+**Publishing:** the GitHub Pages base URL is preconfigured and a Docusaurus workflow exists on `develop`, but a successful build does not mean the portal is publicly deployed. Joshua must integrate the workflow into `main`, and an administrator must configure **Settings → Pages → Build and deployment → GitHub Actions**. This guide does not modify `main` or enable Pages.
+
+
+## Lista de verificación de entrega / Delivery checklist
+
+### Español
+
+- [ ] Confirmar que el workflow de Docusaurus y la documentación aprobada están en `main` (responsable: Joshua).
+- [ ] Confirmar que GitHub Pages utiliza **GitHub Actions** como fuente (requiere administrador).
+- [ ] Comprobar un despliegue **build + deploy** exitoso desde `main`; una compilación de PR no basta.
+- [ ] Abrir `https://joshuaq-rj.github.io/sonoraplay-proyect/` en una ventana privada y comprobar que es accesible sin iniciar sesión.
+- [ ] Revisar portada, navegación lateral, imagen de arquitectura, enlaces internos y páginas de datos, servicios y ADR.
+- [ ] Comprobar el selector de idiomas sin afirmar que todos los documentos históricos están traducidos.
+- [ ] Guardar capturas de la URL pública y del workflow de despliegue, con fecha y commit.
+- [ ] Marcar los componentes AWS como **diseño/propuesta** hasta disponer de evidencias reales de despliegue.
+
+**Diagnóstico:** si la URL devuelve 404, revisar primero que Pages esté habilitado, que el workflow exista en `main` y que `baseUrl` sea `/sonoraplay-proyect/`. Si el sitio abre pero faltan páginas, revisar los enlaces relativos y el registro de compilación. No publicar secretos ni capturas con credenciales.
+
+### English
+
+- [ ] Confirm that the Docusaurus workflow and approved documentation have reached `main` (owner: Joshua).
+- [ ] Confirm GitHub Pages uses **GitHub Actions** as its source (administrator required).
+- [ ] Verify a successful **build + deploy** run from `main`; a PR build alone is insufficient.
+- [ ] Open `https://joshuaq-rj.github.io/sonoraplay-proyect/` in a private window and verify access without signing in.
+- [ ] Check the homepage, sidebar, architecture image, internal links, data, services, and ADR pages.
+- [ ] Test the locale selector without claiming that all historical documents are translated.
+- [ ] Save dated screenshots of the public URL and deployment workflow, including the commit identifier.
+- [ ] Label AWS components as **design/proposal** until real deployment evidence is available.
+
+**Troubleshooting:** for a 404, first check that Pages is enabled, the workflow exists on `main`, and `baseUrl` is `/sonoraplay-proyect/`. If the site loads but pages are missing, check relative links and build logs. Never publish secrets or credential-bearing screenshots.
