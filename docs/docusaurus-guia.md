@@ -81,3 +81,10 @@ The locale selector is configured, but **historical technical documents have not
 - **Bilingual documents:** Docusaurus guide, portal handoff, EG-30 and ADR-0021.
 - **Remaining for full coverage:** complete translation of F2 events, ambiguity analysis, and historical ADRs; editorial review of the new English sections for the F2 simulator and offline attribution, and detailed API and architecture content. Do not claim the whole portal is translated.
 - **Consistency:** distinguish AWS design, locally implemented code, and live deployment. EG-30 CI uses mocked data and does not establish external API or AWS availability.
+
+
+### Actualización de cobertura / Coverage update (2026-10-16)
+
+**Español:** se añadieron secciones inglesas a eventos F2 y resúmenes de decisión a ADR-0001–0008 y ADR-0020. El análisis de ambigüedades, originalmente en inglés, tiene ahora una guía de lectura en español. **La cobertura sigue siendo parcial**: los resúmenes ADR no sustituyen la traducción íntegra de sus alternativas, criterios y consecuencias; las secciones largas de las APIs y la arquitectura conservan detalles únicamente en español. No se han cambiado las decisiones aprobadas.
+
+**English:** English sections were added to F2 events, and decision summaries to ADR-0001–0008 and ADR-0020. The ambiguity analysis, originally in English, now includes a Spanish reading guide. **Coverage remains partial**: ADR summaries do not replace full translations of alternatives, criteria, and consequences; detailed API and architecture sections still contain Spanish-only material. Approved decisions were not changed.
